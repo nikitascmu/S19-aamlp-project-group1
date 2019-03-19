@@ -1,0 +1,35 @@
+---
+title: "ML Pipeline Project Code"
+author: "Lauren Rost, Mridul Singh Gangawar, Nikita Setia"
+date: "March 19, 2019"
+output: html_document
+---
+
+```{r, message=FALSE, warning=FALSE}
+
+#--- Setting working directory 
+setwd("C:/Users/nikit/OneDrive/Documents/CMU/Spring 2019/ML Pipeline/S19-aamlp-projectproposal-group1")
+
+#--- Loading helper files 
+loadlibs = function(libs) {
+  for(lib in libs) {
+    class(lib)
+    if(!do.call(require,as.list(lib))) {install.packages(lib)}
+    do.call(require,as.list(lib))
+  }
+}
+libs = c("tidyr","magrittr","purrr","dplyr","stringr","readr","data.table", "mice", 
+         "randomForest", "ada", "gbm", "caret", "e1071", "ROCR", "ggplot2", "glmnet")
+loadlibs(libs)
+
+#--- setting global decimal print setting
+options(scipen=4)
+
+
+directory = "C:/Users/nikit/OneDrive/Documents/CMU/Spring 2019/ML Pipeline/S19-aamlp-projectproposal-group1"
+
+two_clusters = fread(paste0(directory, "/clusters_two.csv")) %>% as_tibble()
+prog = 
+
+```
+

@@ -8,7 +8,7 @@ output: html_document
 ```{r, message=FALSE, warning=FALSE}
 
 #--- Setting working directory 
-setwd("C:/Users/nikit/OneDrive/Documents/CMU/Spring 2019/ML Pipeline/S19-aamlp-projectproposal-group1")
+setwd("C:/Users/nikit/OneDrive/Documents/CMU/S19-aamlp-projectproposal-group1")
 
 #--- Loading helper files 
 loadlibs = function(libs) {
@@ -28,7 +28,7 @@ options(scipen=4)
 
 directory = "C:/Users/nikit/OneDrive/Documents/CMU/S19-aamlp-projectproposal-group1"
 
-prog = read_xlsx(paste0(directory, "/program_activity.xlsx")) %>% as_tibble()
+prog = fread(paste0(directory, "/program_activity.csv")) %>% as_tibble()
 
 prog %>% group_by(OPIATE_OVERDOSE) %>% summarise(count = length(unique(PERSON_ID)))
 

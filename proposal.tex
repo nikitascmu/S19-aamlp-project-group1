@@ -11,59 +11,53 @@
 
 \author{\name Mridul Gangwar \email mgangwar@andrew.cmu.edu \\
        \addr Heinz College of Information Systems and Public Policy\\
-       Carnegie Mellon University\\
-       Pittsburgh, PA, United States \
+       Carnegie Mellon University, Pittsburgh, PA, United States \
        \AND
        \name Lauren Rost \email lrost@andrew.cmu.edu \\
        \addr Heinz College of Information Systems and Public Policy\\
-       Carnegie Mellon University\\
-       Pittsburgh, PA, United States \
+       Carnegie Mellon University, Pittsburgh, PA, United States \
        \AND
        \name Nikita Setia \email nikitas@andrew.cmu.edu \\
        \addr Heinz College of Information Systems and Public Policy\\
-       Carnegie Mellon University\\
-       Pittsburgh, PA, United States}
+       Carnegie Mellon University, Pittsburgh, PA, United States}
 \maketitle
 
-\section{Project Details} \label{details}
+%\section{Project Details} \label{details}
 
-\subsection{Proposed analysis and Likely Outcomes}
+\section{Proposed analysis and Likely Outcomes}
 This project will use a set of demographic features, usage of county-provided programs, and opioid prescription information to predict overdose deaths (opioid and non-opioid). Specifically, we propose to analyze the aforementioned data of medicaid beneficiaries from 2009 to 2017 provided by Allegheny County Department of Human Services (DHS) to predict the risk of an individual dying due to an non-opioid or opioid-related overdose. An additional component will be to clusters these individuals into groups to see if any sub-groups exist and how they relate to overdose deaths. The likely outcome of this analysis is the finding of at least one feature and subgroup that is highly deterministic in the prediction of overdose deaths, thereby enhancing the space of addiction and overdose death prevention. 
 
-\subsection{Importance of Proposed Analysis}
+\section{Importance of Proposed Analysis}
 National drug overdose deaths have increased over the past two decades, from 16,849 in 1999 to 70,237 in 2017 \footnote{\cite{NIDA_ODR}}. This trend is especially affected by the onset of the opioid epidemic in the late 1990s \footnote{\cite{NIDA_OOC}}. Approximately 67\% of the overdose deaths in 2017 are due to involvement of any opioids and 24\% are specifically due to prescription opioids \footnote{\cite{NIDA_ODR}}. The U.S. Department of Health and Human Services has a 5-point strategy to combat the opioid crisis \footnote{\cite{HHS}}. These points include gathering better data and conducting pertinent research to prevent addiction, thereby preventing overdose deaths. Through this analysis, we hope to contribute to the HHS strategy to combat the opioid crisis. 
 
-\subsection{Contribution to Existing Work}
+\section{Contribution to Existing Work}
 % https://jamanetwork.com/journals/jamanetworkopen/fullarticle/2728625
 % Nikita to add information about fellowship and previous semester's work
 % Provide references, \emph{e.g.}, see: \cite{cite1}.
 
-\subsection{Data Description}
-There are 3 datasets: demographic, DHS program activity, and opioid prescription provision containing information on 120,650 medicaid beneficiaries in Allegheny County from 2009 to 2017. The demographic data contains each person's race and gender. The program activity entails 
+\section{Data Description}
+The population (W) is 120,650 individuals who are enrolled in medicaid and have obtained at least one opioid prescription in Allegheny County between 2009 to 2017. Once an individual enters the system, all demographic information, subsequent interaction with DHS, and prescription fills were recorded in separate datasets (demographic, program, and prescription). \\
 
-% Where applicable, please also define Y outcome(s), U treatment, V covariates, and W population.
+The demographic data contains each person's race and gender. The program activity entails each individual's usage of DHS programs and criminal records over time. These include: usage of the Child, Youth and Family (CYF) program (as child or parent), of mental health service, of drug and alcohol service, and of opiate prescription service. Criminal records entail count of lower court criminal cases (all or drug-related) as well as the individual's status of incarceration in the county jail. The prescription dataset includes various features pertaining to each fill, such as strength of prescription, brand of drug, and so on. \\
 
-\subsection{Evaluation Measures}
+The covariates (V) are select features present in each of the datasets. Some of these features will need to be pre-processed or customized. One outcome (Y) that we plan to explore is whether the individual dies of overdose (any). Another outcome (y) will be whether this is an opioid-related overdose. Both these outcomes will be binary. 
 
-\subsection{Study Design, Pre-Processing and Machine Learning Methodology}
+\section{Evaluation Measures}
+The evaluation metric which is appropriate for a classification problem is accuracy. Considering the imbalanced dataset, we are planning to make use of specificity, and sensitivity to identify the risk of individual dying due to an opioid-related overdose. To compare the performance of various machine learning models graphically, we are planning to use the area under the curve (AUC) and receiver operating characteristic (ROC) curve.  
+
+\section{Study Design, Pre-Processing and Machine Learning Methodology}
 
 % Justify that the analysis is of appropriate size for a course project.
 
-\subsection{Possible Study Limitations}
+\section{Possible Study Limitations}
 
-\subsection{Potential Future Use of Analytic Pipeline}
+\section{Potential Future Use of Analytic Pipeline}
 
+\newpage
 \bibliography{proposal_bibliography.bib}
-\appendix
-\section*{Appendix}
 
-%\ref{fig:ROC_logistic}.
-\begin{figure}[h]
-\begin{center}
-\includegraphics[width = 0.8\textwidth]{demo_head.png}
-\end{center}
-\caption{ROC curve for 2011 cohort prediction via GBTM's conditional probability and logistic regression; class 0 is heavy users group.}
-\label{fig:ROC_logistic}
-\end{figure}
+%\newpage
+%\appendix
+%\section*{Appendix}
 
 \end{document}

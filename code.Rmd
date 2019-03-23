@@ -25,12 +25,18 @@ loadlibs(libs)
 #--- setting global decimal print setting
 options(scipen=4)
 
-
+#--- loading data
 directory = "C:/Users/nikit/OneDrive/Documents/CMU/S19-aamlp-projectproposal-group1"
 
 prog = fread(paste0(directory, "/program_activity.csv")) %>% as_tibble()
+dem = fread(paste0(directory, "/demographic.csv")) %>% as_tibble()
+presc = fread(paste0(directory, "/opiate_prescription_fills.csv")) %>% as_tibble()
 
-prog %>% group_by(OPIATE_OVERDOSE) %>% summarise(count = length(unique(PERSON_ID)))
+```
 
+```{r, message=FALSE, warning=FALSE}
+#prog %>% group_by(OPIATE_OVERDOSE) %>% summarise(count = length(unique(PERSON_ID)))
+
+head(presc)
 ```
 

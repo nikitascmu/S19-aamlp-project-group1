@@ -1,4 +1,4 @@
-### Heinz 95-845: Overdose Death Prediction Pipeline
+### Heinz 95-845: Overdose Death Prediction Pipeline (Group 1)
 
 The repository contains csv, LaTeX, docx, pdf, and image files relevant to our project. 
 

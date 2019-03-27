@@ -1,0 +1,74 @@
+\documentclass[twoside,10.5pt]{article}
+\usepackage{jmlr2e}
+%\usepackage{multicol}
+%\usepackage[landscape]{geometry}
+\usepackage{hyperref}
+\usepackage{endnotes}
+\let\footnote=\endnote
+\renewcommand{\notesname}{Endnotes}
+\newcommand{\dataset}{{\cal D}}
+\newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
+\ShortHeadings{95-845: AAMLP Proposal}{Gangwar, Rost and Setia}
+\firstpageno{1}
+
+\begin{document}
+
+\title{Heinz 95-845: Project Proposal}
+
+\author{\name Mridul Gangwar \email mgangwar@andrew.cmu.edu \\
+       \addr Heinz College of Information Systems and Public Policy\\
+       Carnegie Mellon University, Pittsburgh, PA, United States \
+       \AND
+       \name Lauren Rost \email lrost@andrew.cmu.edu \\
+       \addr Heinz College of Information Systems and Public Policy\\
+       Carnegie Mellon University, Pittsburgh, PA, United States \
+       \AND
+       \name Nikita Setia \email nikitas@andrew.cmu.edu \\
+       \addr Heinz College of Information Systems and Public Policy\\
+       Carnegie Mellon University, Pittsburgh, PA, United States}
+       
+\maketitle
+%\begin{multicols}{2}
+%\section{Project Details} \label{details}
+\vspace*{5px}
+\section{Proposed Analysis and Likely Outcomes}
+This project will use a set of demographic features, usage of county-provided programs, and opioid prescription information to predict overdose deaths (opioid and non-opioid). Specifically, we propose to analyze the aforementioned data of Medicaid beneficiaries from 2009 to 2017 provided by Allegheny County Department of Human Services (DHS) to predict the risk of an individual dying due to an non-opioid or opioid-related overdose. An additional component will be to cluster these individuals to see whether sub-groups exist and how clusters relate to overdose deaths. The likely outcome of this analysis is the finding of at least one feature and subgroup that is highly deterministic in the prediction of overdose deaths, thereby enhancing the space of addiction and overdose death prevention. 
+
+\section{Importance of Proposed Analysis}
+National drug overdose deaths have increased over the past two decades, from 16,849 in 1999 to 70,237 in 2017\footnote{\cite{NIDA_ODR}}. This trend is especially affected by the onset of the opioid epidemic in the late 1990s\footnote{\cite{NIDA_OOC}}. Approximately 67\% of the overdose deaths in 2017 are due to involvement of any opioids and 24\% are specifically due to prescription opioids \footnote{\cite{NIDA_ODR}}. The U.S. Department of Health and Human Services has a 5-point strategy to combat the opioid crisis \footnote{\cite{HHS}}. These points include gathering better data and conducting pertinent research to prevent addiction, thereby preventing overdose deaths. Through this analysis, we hope to contribute to the HHS strategy to combat the opioid crisis. 
+
+\section{Contribution to Existing Work}
+In 2005, the Opioid Risk Tool was developed to help flag patients at risk for opioid abuse and overdose\footnote{\cite{Webster}}. However, due to the subjective nature of this tool and the spike of deaths in 2017, machine learning has been sought to provide a more objective and quantitative approach to estimate risk of opioid abuse and overdose.\\
+
+Acion et al. used a super learning approach to predict the successful treatment for patients with substance use disorders\footnote{\cite{Acion}}. Haller et al. utilized natural language processing on electronic health record data to assess risk and predict opioid abuse \footnote{\cite{Haller}}. Crosier et al. predicted overdose frequency using random forests in order to uncover important features related to overdose frequency and course\footnote{\cite{Sage}}. Lobo et al. identified sub-groups of Pennsylvania patients at greater risk for opioid abuse in a k-means clustering algorithm\footnote{\cite{Lobo}}.\\
+
+Our research will expand upon previous work seeking to understand opioid abuse and overdose, specifically as it relates to machine learning. We will implement a more in-depth approach to predicting opioid abuse and will be specific to Allegheny County, an area that is greatly impacted by the opioid crisis\footnote{\cite{Allegheny}}. 
+
+\section{Data Description}
+The population (W) is 120,650 individuals who are enrolled in Medicaid and have obtained at least one opioid prescription in Allegheny County between 2009 to 2017. Once an individual enters the system, all demographic information, subsequent interaction with DHS, and prescription fills were recorded in separate datasets (demographic, program, and prescription).\\
+
+The demographic data contains each person's race and gender. The program activity entails each individual's usage of DHS programs and criminal records over time. Programs include: Child, Youth and Family (CYF) program (as child or parent), mental health service, drug and alcohol service, and opiate prescription service. Criminal records entail an individual's count of criminal cases and incarceration status. The prescription dataset includes various features pertaining to each fill, such as dose, brand, etc. Further information can be accessed in our Github repository.\\
+
+The covariates (V) are select features present in each of the datasets. Some of these features will need to be pre-processed or customized. Our binary outcomes of interest (Y) are whether the individual dies of overdose (any) and whether the event was an opioid-related overdose. 
+
+\section{Evaluation Measures}
+To evaluate the performance of various machine learning models, we intend to create ROC curves and determine area under the curve. Given that the number of overdose deaths (especially opioid-specific) are very low, our dataset is imbalanced. As such, we intend on using other measures more sensitive to this imbalance, such as: specificity, sensitivity, f-1 score, positive predicted value (PPV), negative predictive value (NPV), and precision versus recall.   
+
+\section{Study Design, Pre-Processing and Machine Learning Methodology}
+We expect the missing values to be either missing completely at random (MCAR) or missing not at random (MNAR). To address this, we will either create missingness as its own category or use a pertinent imputation technique. We may use oversampling to overcome the problem of the imbalanced dataset or some form of cost-sensitive classification. We plan to use the following machine learning algorithms: multivariate logistic regression (MLR), regularized MLR (lasso), random forest (RF), boosting, gradient boosting machine (GBM), and k-means clustering. We aim to use cross-validation and tune the hyperparameters to obtain the best possible results. 
+  
+
+\section{Potential Future Use of Pipeline/Study and Possible Limitations}
+We hope that our study and its analytic pipeline can be used by counties to analyze their data to predict and prevent overdose deaths and opioid addiction. The possible limitations of this study include our ignorance to Allegheny County data collection methodologies. This may potentially limit the generalizability of this study to other counties. Limitations affecting internal validity are the lack of additional meaningful features, such as: insurance claims,  diagnosis, medical history and socio-economic status. We strive for our opioid pipeline to be sufficiently robust and verbose to allow for appropriate adaptation.
+
+
+\newpage
+\theendnotes
+\bibliographystyle{ieeetr}
+\bibliography{proposal_bibliography.bib}
+
+%\newpage
+%\appendix
+%\section*{Appendix}
+%\end{multicols}
+\end{document}

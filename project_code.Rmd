@@ -1,0 +1,52 @@
+---
+title: "ML Pipeline Project Code"
+author: "Lauren Rost, Mridul Singh Gangawar, Nikita Setia"
+date: "March 19, 2019"
+output: html_document
+---
+
+```{r, message=FALSE, warning=FALSE}
+
+#--- Setting working directory 
+setwd("C:/Users/nikit/OneDrive/Documents/CMU/S19-aamlp-project-group1")
+
+#--- Loading helper files 
+loadlibs = function(libs) {
+  for(lib in libs) {
+    class(lib)
+    if(!do.call(require,as.list(lib))) {install.packages(lib)}
+    do.call(require,as.list(lib))
+  }
+}
+libs = c("tidyr","magrittr","purrr","dplyr","stringr","readr","data.table", "mice", 
+         "randomForest", "ada", "gbm", "caret", "e1071", "ROCR", "ggplot2", "glmnet", "readxl")
+loadlibs(libs)
+
+#--- setting global decimal print setting
+options(scipen=4)
+
+#--- loading data
+directory = "C:/Users/nikit/OneDrive/Documents/CMU/S19-aamlp-project-group1"
+
+prog = fread(paste0(directory, "/program_activity.csv")) %>% as_tibble() %>% mutate_if(is.character, as.factor)
+dem = fread(paste0(directory, "/demographic.csv")) %>% as_tibble() %>% mutate_if(is.character, as.factor)
+presc = fread(paste0(directory, "/opiate_prescription_fills.csv")) %>% as_tibble() %>% mutate_if(is.character, as.factor)
+
+```
+
+```{r, message=FALSE, warning=FALSE}
+summary(dem)
+
+# missing data for RACE and GENDER
+# pajlsd;laksdsadlkj
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+summary(prog)
+```
+
+```{r, message=FALSE, warning=FALSE}
+
+summary(presc)
+```

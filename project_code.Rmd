@@ -9,6 +9,7 @@ output: html_document
 
 #--- Setting working directory 
 setwd("C:/Users/nikit/OneDrive/Documents/CMU/S19-aamlp-project-group1")
+# setwd("~/Desktop/DBMI/Spring2019/AppliedAnalytics/FinalProject/")
 
 #--- Loading helper files 
 loadlibs = function(libs) {

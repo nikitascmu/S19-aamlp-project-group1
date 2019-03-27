@@ -8,7 +8,7 @@ output: html_document
 ```{r, message=FALSE, warning=FALSE}
 
 #--- Setting working directory 
-setwd("C:/Users/nikit/OneDrive/Documents/CMU/S19-aamlp-project-group1")
+setwd("C:/Users/nikit/OneDrive/Documents/CMU/Spring 2019/ML Pipeline/S19-aamlp-project-group1")
 
 #--- Loading helper files 
 loadlibs = function(libs) {
@@ -26,25 +26,58 @@ loadlibs(libs)
 options(scipen=4)
 
 #--- loading data
-directory = "C:/Users/nikit/OneDrive/Documents/CMU/S19-aamlp-project-group1"
+directory = "C:/Users/nikit/OneDrive/Documents/CMU/Spring 2019/ML Pipeline/S19-aamlp-project-group1"
 
-prog = fread(paste0(directory, "/program_activity.csv")) %>% as_tibble() %>% mutate_if(is.character, as.factor)
-dem = fread(paste0(directory, "/demographic.csv")) %>% as_tibble() %>% mutate_if(is.character, as.factor)
-presc = fread(paste0(directory, "/opiate_prescription_fills.csv")) %>% as_tibble() %>% mutate_if(is.character, as.factor)
+prog = fread(paste0(directory, "/program_activity.csv")) %>% as_tibble() 
+dem = fread(paste0(directory, "/demographic.csv")) %>% as_tibble() 
+presc = fread(paste0(directory, "/opiate_prescription_fills.csv")) %>% as_tibble()
 
 ```
 
 ```{r, message=FALSE, warning=FALSE}
-summary(dem)
+
+summary(dem %>% mutate_if(is.character, as.factor))
 
 # missing data for RACE and GENDER
-# pajlsd;laksdsadlkj
+# merging native hawaiian/pacific islander + no data = no data and other because the former is too small
+# merging transgendered male to female and no data = no data and other because former is too small
+# dealing with missingness by allowing it to be its own category - because most likely MNAR
 ```
+
+```{r, message=FALSE, warning=FALSE}
+
+dem$RACE[which(grepl("No Data", dem$RACE))] = "No Data and Other"
+dem$RACE[which(grepl("Native Hawaiian", dem$RACE))] = "No Data and Other"
+dem$GENDER[which(grepl("No Data", dem$GENDER))] = "No Data and Other"
+dem$GENDER[which(grepl("Transgendered", dem$GENDER))] = "No Data and Other"
+
+summary(dem %>% mutate_if(is.character, as.factor))
+```
+
 
 ```{r, message=FALSE, warning=FALSE}
 
 summary(prog)
+
+# No missing values in the program data 
+# Overdose date and opiate overdose has NAs for individuals who have not overdosed, 
+# so that is meaningful and not actually missing
+
 ```
+
+```{r}
+
+prog = prog %>% separate(OVERDOSE_DATE, c("OVERDOSE_YEAR", "OVERDOSE_MONTH"), remove=FALSE, sep=4)
+
+prog$OPIATE_OVERDOSE[which(grepl(0, prog$OPIATE_OVERDOSE))] = "Non-Opiate Overdose"
+prog$OPIATE_OVERDOSE[which(grepl(1, prog$OPIATE_OVERDOSE))] = "Opiate Overdose"
+prog$OPIATE_OVERDOSE[which(is.na(prog$OPIATE_OVERDOSE))] = "No Overdose"
+
+summary(prog %>% mutate_if(is.character, as.factor))
+
+
+```
+
 
 ```{r, message=FALSE, warning=FALSE}
 

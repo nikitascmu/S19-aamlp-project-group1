@@ -18,6 +18,11 @@ libs = c("tidyr","magrittr","purrr","dplyr","stringr","readr","data.table", "mic
          "randomForest", "ada", "gbm", "caret", "e1071", "ROCR", "ggplot2", "glmnet", "readxl")
 loadlibs(libs)
 
+mode_fun <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
 #--- setting global decimal print setting
 options(scipen=4)
 
@@ -44,6 +49,7 @@ dem$RACE[which(grepl("Native Hawaiian", dem$RACE))] = "No Data and Other"
 dem$GENDER[which(grepl("No Data", dem$GENDER))] = "No Data and Other"
 dem$GENDER[which(grepl("Transgendered", dem$GENDER))] = "No Data and Other"
 
+colnames(dem) = c("PERSON_ID", "race", "gender")
 summary(dem %>% mutate_if(is.character, as.factor))
 ```
 
@@ -58,7 +64,7 @@ summary(prog)
 
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 
 prog = prog %>% separate(OVERDOSE_DATE, c("OVERDOSE_YEAR", "OVERDOSE_MONTH"), remove=FALSE, sep=4)
 
@@ -71,8 +77,101 @@ summary(prog %>% mutate_if(is.character, as.factor))
 
 ```
 
+```{r, message=FALSE, warning=FALSE}
+
+times_used = prog %>% group_by(PERSON_ID) %>% select(YEAR, MONTH) %>% summarise(times_used = max(sequence(n())))
+
+prog_summary = prog %>% group_by(PERSON_ID) %>% summarise(total_cyfchild = sum(CYFCHILD),
+                                                          total_cyfparent = sum(CYFPARENT),
+                                                          total_mh = sum(MH),
+                                                          total_da = sum(DA),
+                                                          total_rx = sum(RX),
+                                                          total_acj = sum(ACJ),
+                                                          total_cr_cases = sum(MDJS_CR_CASES),
+                                                          total_cr_drug_cases = sum(MDJS_CR_DRUG_CASES))
+
+outcome_df = prog %>% group_by(PERSON_ID) %>% 
+  summarise(od_date = max(OVERDOSE_DATE), od_year = max(OVERDOSE_YEAR), 
+            od_month = max(OVERDOSE_MONTH), od_type = max(OPIATE_OVERDOSE))
+
+```
+
 
 ```{r, message=FALSE, warning=FALSE}
 
-summary(presc)
+summary(presc %>% mutate_if(is.character, as.factor))
+
 ```
+
+```{r, warning=FALSE, message=FALSE}
+
+age_df = presc %>% group_by(PERSON_ID) %>% summarise(min_age = min(AGE), max_age = max(AGE), mean_age = mean(AGE))
+
+age_df = age_df %>% group_by(PERSON_ID) %>% mutate(age = if_else(min_age<0, max_age, min_age)) %>%
+  mutate(age = if_else(age<0, 999, age))
+
+age_df$age[which(age_df$age>99)] = NA
+
+summary(age_df)
+
+
+```
+
+```{r}
+
+presc <- presc %>% 
+  mutate(generic_name = 
+    if_else(grepl('DIHYDROCODEINE BITARTR', presc_raw$GENERIC_NAME), 'DIHYDROCODEINE BITARTRATE', 
+    if_else(grepl('BUPRENORPHINE', presc_raw$GENERIC_NAME), 'BUPRENORPHINE',
+    if_else(grepl('HYDROCODONE BITARTRAT', presc_raw$GENERIC_NAME), 'HYDROCODONE BITARTRATE',
+    if_else(grepl('MORPHINE SULFATE', presc_raw$GENERIC_NAME), 'MORPHINE SULFATE',
+    if_else(grepl('OXYCODONE', presc_raw$GENERIC_NAME), 'OXYCODONE', 
+    if_else(grepl('PENTAZOCINE', presc_raw$GENERIC_NAME), 'PENTAZOCINE',
+    if_else(grepl('TRAMADOL', presc_raw$GENERIC_NAME), 'TRAMADOL',
+    if_else(grepl('CODEINE PHOSPHATE', presc_raw$GENERIC_NAME), 'CODEINE PHOSPHATE',
+    if_else(grepl('OPIUM/BELLADONNA', presc_raw$GENERIC_NAME), 'OPIUM/BELLADONNA', 
+    if_else(grepl('FENTANYL', presc_raw$GENERIC_NAME), 'FENTANYL',
+    if_else(grepl('HYDROMORPHONE', presc_raw$GENERIC_NAME), 'HYDROMORPHONE', 
+    if_else(grepl('MEPERIDINE', presc_raw$GENERIC_NAME), 'MEPERIDINE', GENERIC_NAME
+    )))))))))))))
+
+
+presc <- presc %>% 
+  mutate(dosage_form = 
+    if_else(grepl('TABLET', presc_raw$DOSAGE_FORM_DESC), 'PILL', 
+    if_else(grepl('VIAL', presc_raw$DOSAGE_FORM_DESC), 'VIAL',
+    if_else(grepl('SYRINGE', presc_raw$DOSAGE_FORM_DESC), 'VIAL',
+    if_else(grepl('CAPSULE', presc_raw$DOSAGE_FORM_DESC), 'PILL', 
+    if_else(grepl('PATCH', presc_raw$DOSAGE_FORM_DESC), 'PATCH',
+    if_else(grepl('LOZENGE', presc_raw$DOSAGE_FORM_DESC), 'LOZENGE',
+    if_else(grepl('AMPUL', presc_raw$DOSAGE_FORM_DESC), 'AMPUL',
+    if_else(grepl('SPRAY', presc_raw$DOSAGE_FORM_DESC), 'SPRAY',
+    if_else(grepl('SOLUTION', presc_raw$DOSAGE_FORM_DESC), 'LIQUID',
+    if_else(grepl('LIQUID', presc_raw$DOSAGE_FORM_DESC), 'LIQUID',
+    if_else(grepl('CONCENTRATE', presc_raw$DOSAGE_FORM_DESC), 'LIQUID',
+    if_else(grepl('SUPPOSITORY', presc_raw$DOSAGE_FORM_DESC), 'SUPPOSITORY', 'NA'
+    )))))))))))))
+
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+
+
+#presc %>% group_by(generic_name) %>% summarise(count = n()) %>% arrange(count)
+
+presc_summary = presc %>% group_by(PERSON_ID) %>% summarise(num_presc = n(), 
+                                            most_presc_drug = mode_fun(generic_name),
+                                            oxy_count = sum(grepl('OXYCODONE', generic_name)),
+                                            tram_count = sum(grepl('TRAMADOL', generic_name)),
+                                            hydrobit_count = sum(grepl('HYDROCODONE BITARTRATE', generic_name)),
+                                            most_dose_form = mode_fun(dosage_form),
+                                            pill_count = sum(grepl('PILL', dosage_form)),
+                                            patch_count = sum(grepl('PATCH', dosage_form)),
+                                            liquid_count = sum(grepl('LIQUID', dosage_form)))
+
+
+
+
+```
+

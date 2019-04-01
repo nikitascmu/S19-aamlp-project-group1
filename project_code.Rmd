@@ -6,10 +6,6 @@ output: html_document
 ---
 
 ```{r, message=FALSE, warning=FALSE}
-
-#--- Setting working directory 
-setwd("C:/Users/nikit/OneDrive/Documents/CMU/Spring 2019/ML Pipeline/S19-aamlp-project-group1")
-
 #--- Loading helper files 
 loadlibs = function(libs) {
   for(lib in libs) {
@@ -25,12 +21,9 @@ loadlibs(libs)
 #--- setting global decimal print setting
 options(scipen=4)
 
-#--- loading data
-directory = "C:/Users/nikit/OneDrive/Documents/CMU/Spring 2019/ML Pipeline/S19-aamlp-project-group1"
-
-prog = fread(paste0(directory, "/program_activity.csv")) %>% as_tibble() 
-dem = fread(paste0(directory, "/demographic.csv")) %>% as_tibble() 
-presc = fread(paste0(directory, "/opiate_prescription_fills.csv")) %>% as_tibble()
+prog = fread("program_activity.csv") %>% as_tibble() 
+dem = fread("demographic.csv") %>% as_tibble() 
+presc = fread("opiate_prescription_fills.csv") %>% as_tibble()
 
 ```
 

@@ -117,8 +117,80 @@ summary(age_df)
 
 ```
 
+```{r, message=FALSE, warning=FALSE}
+presc_raw = presc
+presc_raw$drug_strength <- str_extract(presc_raw$LABEL_NAME, "[0-9].*")
+
+# drug strength indicated that these are oral solutions per 5ML, so made this change manually
+presc_raw$drug_strength[which(grepl('ORAL SOLUTION', presc_raw$extract_strength))] <- "5-325/5ML"
+presc_raw$drug_strength[which(grepl('NALOXONE', presc_raw$LABEL_NAME))] <- "50MG-0.5MG"
+presc_raw = presc_raw %>% mutate(drug_strength = if_else(is.na(drug_strength), DRUG_STRENGTH, drug_strength))
+
+# Creating a new column 'num_strength' that keeps only numeric values from 'drug_strength'
+presc_raw$num_strength <- str_extract(presc_raw$drug_strength, "[0-9]*.*[0-9]")
+
+presc_raw <- separate(presc_raw, num_strength, c("opioid_strength", "compound_strength"), sep = '-')
+presc_raw <- separate(presc_raw, opioid_strength, c("opioid", "divisor"), sep = '/')
+presc_raw$opioid <- str_extract(presc_raw$opioid, "[0-9]*.*[0-9]")
+presc_raw <- separate(presc_raw, compound_strength, c("compound", "divisor2"), sep = '/')
+#sum(presc_raw$divisor==presc_raw$divisor2,na.rm=TRUE)
+presc_raw = presc_raw %>% mutate(divisor = if_else(is.na(divisor), divisor2, divisor))
+presc_raw = presc_raw %>% select(-divisor2)
+presc_raw = presc_raw %>% mutate(opioid = if_else(is.na(compound), opioid, 
+                                                  if_else(opioid>compound, compound, opioid)))
+presc_raw$divisor[which(is.na(presc_raw$divisor))] = 1
+presc_raw$compound[which(is.na(presc_raw$compound))] = 1
+
+presc_raw = presc_raw %>% mutate(opioid_converted = as.numeric(opioid)/as.numeric(divisor))
+
+```
+
 ```{r}
 
+presc_raw <- presc_raw %>% 
+  mutate(conversion_factor = 
+    if_else(grepl('BUPRENORPHINE', GENERIC_NAME) & grepl('PATCH', DOSAGE_FORM_DESC), 12.6, 
+    if_else(grepl('BUPRENORPHINE', GENERIC_NAME) & grepl('AMPUL', DOSAGE_FORM_DESC), 30,
+    if_else(grepl('BUTORPHANOL', GENERIC_NAME), 7,
+    if_else(grepl('CODEINE', GENERIC_NAME), 0.15,
+    if_else(grepl('DIHYDROCODEINE BITARTRATE', GENERIC_NAME), 0.25,
+    if_else(grepl('OPIUM', GENERIC_NAME), 1,
+    if_else(grepl('FENTANYL', GENERIC_NAME) & grepl('TABLET', DOSAGE_FORM_DESC), 0.13,
+    if_else(grepl('FENTANYL', GENERIC_NAME) & grepl('LOZENGE', DOSAGE_FORM_DESC), 0.13,
+    if_else(grepl('FENTANYL', GENERIC_NAME) & grepl('PATCH', DOSAGE_FORM_DESC), 7.2,
+    if_else(grepl('NALBUPHINE', GENERIC_NAME), 1,
+    if_else(grepl('FENTANYL CITRATE', GENERIC_NAME), 0.13,
+    if_else(grepl('HYDROCODONE', GENERIC_NAME), 1,
+    if_else(grepl('HYDROMORPHONE', GENERIC_NAME), 4,
+    if_else(grepl('LEVORPHANOL TARTRATE', GENERIC_NAME), 11,
+    if_else(grepl('MEPERIDINE', GENERIC_NAME), 0.1,
+    if_else(grepl('METHADONE', GENERIC_NAME) & opioid_converted<=20, 4, 
+    if_else(grepl('METHADONE', GENERIC_NAME) & opioid_converted>20, 8, 
+    if_else(grepl('MORPHINE', GENERIC_NAME), 1, 
+    if_else(grepl('OXYCODONE', GENERIC_NAME), 1.5, 
+    if_else(grepl('OXYMORPHONE', GENERIC_NAME), 3,
+    if_else(grepl('PENTAZOCINE', GENERIC_NAME), 0.37,
+    if_else(grepl('TAPENTADOL', GENERIC_NAME), 0.4,
+    if_else(grepl('TRAMADOL', GENERIC_NAME), 0.1, 0))))))))))))))))))))))))
+
+#unique(presc_raw$conversion_factor)
+
+presc_raw$MME <- round((presc_raw$opioid_converted*presc_raw$DISPENSED_QTY*presc_raw$conversion_factor)/presc_raw$DAYS_SUPPLY,2)
+
+unique(presc_raw$MME)
+
+df = presc_raw %>% filter(grepl('PATCH', presc_raw$DOSAGE_FORM_DESC))
+
+table(df$DOSAGE_FORM_DESC, df$GENERIC_NAME)
+
+```
+
+
+
+```{r, warning=FALSE, message=FALSE}
+
+
+#presc %>% group_by(generic_name) %>% summarise(count = n()) %>% arrange(count)
 presc <- presc %>% 
   mutate(generic_name = 
     if_else(grepl('DIHYDROCODEINE BITARTR', presc_raw$GENERIC_NAME), 'DIHYDROCODEINE BITARTRATE', 
@@ -151,14 +223,6 @@ presc <- presc %>%
     if_else(grepl('CONCENTRATE', presc_raw$DOSAGE_FORM_DESC), 'LIQUID',
     if_else(grepl('SUPPOSITORY', presc_raw$DOSAGE_FORM_DESC), 'SUPPOSITORY', 'NA'
     )))))))))))))
-
-```
-
-
-```{r, warning=FALSE, message=FALSE}
-
-
-#presc %>% group_by(generic_name) %>% summarise(count = n()) %>% arrange(count)
 
 presc_summary = presc %>% group_by(PERSON_ID) %>% summarise(num_presc = n(), 
                                             most_presc_drug = mode_fun(generic_name),

@@ -272,7 +272,7 @@ presc = presc %>% mutate(dispensed_qty = if_else(DISPENSED_QTY<min_dispensed_val
 
 presc$mme <- round((presc$opioid_converted*presc$dispensed_qty*presc$conversion_factor)/presc$days_supply,2)
 
-quantile(presc$mme, probs=seq(0, 1, by=0.005))
+# quantile(presc$mme, probs=seq(0, 1, by=0.005))
 ```
 
 

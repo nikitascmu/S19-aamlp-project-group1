@@ -5,7 +5,7 @@ date: "March 19, 2019"
 output: html_document
 ---
 
-```{r, message=FALSE, warning=FALSE}
+```{r}
 #--- Loading helper files 
 loadlibs = function(libs) {
   for(lib in libs) {
@@ -32,7 +32,7 @@ presc = fread("opiate_prescription_fills.csv") %>% as_tibble()
 
 ```
 
-```{r, message=FALSE, warning=FALSE}
+```{r}
 
 summary(dem %>% mutate_if(is.character, as.factor))
 
@@ -42,19 +42,19 @@ summary(dem %>% mutate_if(is.character, as.factor))
 # dealing with missingness by allowing it to be its own category - because most likely MNAR
 ```
 
-```{r, message=FALSE, warning=FALSE}
+```{r}
 
 dem$RACE[which(grepl("No Data", dem$RACE))] = "No Data and Other"
 dem$RACE[which(grepl("Native Hawaiian", dem$RACE))] = "No Data and Other"
 dem$GENDER[which(grepl("No Data", dem$GENDER))] = "No Data and Other"
 dem$GENDER[which(grepl("Transgendered", dem$GENDER))] = "No Data and Other"
 
-colnames(dem) = c("PERSON_ID", "race", "gender")
+dem = dem %>% rename("race"=RACE, "gender"=GENDER)
 summary(dem %>% mutate_if(is.character, as.factor))
 ```
 
 
-```{r, message=FALSE, warning=FALSE}
+```{r}
 
 summary(prog)
 
@@ -64,7 +64,7 @@ summary(prog)
 
 ```
 
-```{r, message=FALSE, warning=FALSE}
+```{r}
 
 prog = prog %>% separate(OVERDOSE_DATE, c("OVERDOSE_YEAR", "OVERDOSE_MONTH"), remove=FALSE, sep=4)
 
@@ -77,7 +77,7 @@ summary(prog %>% mutate_if(is.character, as.factor))
 
 ```
 
-```{r, message=FALSE, warning=FALSE}
+```{r}
 
 times_used = prog %>% group_by(PERSON_ID) %>% select(YEAR, MONTH) %>% summarise(times_used = max(sequence(n())))
 
@@ -97,57 +97,57 @@ outcome_df = prog %>% group_by(PERSON_ID) %>%
 ```
 
 
-```{r, message=FALSE, warning=FALSE}
+```{r}
 
 summary(presc %>% mutate_if(is.character, as.factor))
 
 ```
 
-```{r, warning=FALSE, message=FALSE}
+```{r}
 
-age_df = presc %>% group_by(PERSON_ID) %>% summarise(min_age = min(AGE), max_age = max(AGE), mean_age = mean(AGE))
+age_df = presc %>% group_by(PERSON_ID) %>% summarise(min_age = min(AGE), max_age = max(AGE), mean_age = round(mean(AGE)))
 
-age_df = age_df %>% group_by(PERSON_ID) %>% mutate(age = if_else(min_age<0, max_age, min_age)) %>%
-  mutate(age = if_else(age<0, 999, age))
+age_df = age_df %>% group_by(PERSON_ID) %>% mutate(age_clean = if_else(min_age<0, max_age, min_age)) %>%
+  mutate(age_clean = if_else(age_clean<0, 999, age_clean))
 
-age_df$age[which(age_df$age>99)] = NA
+age_df$age_clean[which(age_df$age_clean>99)] = NA
+age_df$age = age_df$age_clean
+age_df$age[which(is.na(age_df$age_clean))] = median(age_df$age_clean, na.rm=TRUE)
 
 summary(age_df)
-
-
 ```
 
-```{r, message=FALSE, warning=FALSE}
-presc_raw = presc
-presc_raw$drug_strength <- str_extract(presc_raw$LABEL_NAME, "[0-9].*")
+```{r}
+
+presc$drug_strength <- str_extract(presc$LABEL_NAME, "[0-9].*")
 
 # drug strength indicated that these are oral solutions per 5ML, so made this change manually
-presc_raw$drug_strength[which(grepl('ORAL SOLUTION', presc_raw$extract_strength))] <- "5-325/5ML"
-presc_raw$drug_strength[which(grepl('NALOXONE', presc_raw$LABEL_NAME))] <- "50MG-0.5MG"
-presc_raw = presc_raw %>% mutate(drug_strength = if_else(is.na(drug_strength), DRUG_STRENGTH, drug_strength))
+presc$drug_strength[which(grepl('ORAL SOLUTION', presc$extract_strength))] <- "5-325/5ML"
+presc$drug_strength[which(grepl('NALOXONE', presc$LABEL_NAME))] <- "50MG-0.5MG"
+presc = presc %>% mutate(drug_strength = if_else(is.na(drug_strength), DRUG_STRENGTH, drug_strength))
 
 # Creating a new column 'num_strength' that keeps only numeric values from 'drug_strength'
-presc_raw$num_strength <- str_extract(presc_raw$drug_strength, "[0-9]*.*[0-9]")
+presc$num_strength <- str_extract(presc$drug_strength, "[0-9]*.*[0-9]")
 
-presc_raw <- separate(presc_raw, num_strength, c("opioid_strength", "compound_strength"), sep = '-')
-presc_raw <- separate(presc_raw, opioid_strength, c("opioid", "divisor"), sep = '/')
-presc_raw$opioid <- str_extract(presc_raw$opioid, "[0-9]*.*[0-9]")
-presc_raw <- separate(presc_raw, compound_strength, c("compound", "divisor2"), sep = '/')
-#sum(presc_raw$divisor==presc_raw$divisor2,na.rm=TRUE)
-presc_raw = presc_raw %>% mutate(divisor = if_else(is.na(divisor), divisor2, divisor))
-presc_raw = presc_raw %>% select(-divisor2)
-presc_raw = presc_raw %>% mutate(opioid = if_else(is.na(compound), opioid, 
+presc <- separate(presc, num_strength, c("opioid_strength", "compound_strength"), sep = '-')
+presc <- separate(presc, opioid_strength, c("opioid", "divisor"), sep = '/')
+presc$opioid <- str_extract(presc$opioid, "[0-9]*.*[0-9]")
+presc <- separate(presc, compound_strength, c("compound", "divisor2"), sep = '/')
+#sum(presc$divisor==presc$divisor2,na.rm=TRUE)
+presc = presc %>% mutate(divisor = if_else(is.na(divisor), divisor2, divisor))
+presc = presc %>% select(-divisor2)
+presc = presc %>% mutate(opioid = if_else(is.na(compound), opioid, 
                                                   if_else(opioid>compound, compound, opioid)))
-presc_raw$divisor[which(is.na(presc_raw$divisor))] = 1
-presc_raw$compound[which(is.na(presc_raw$compound))] = 1
+presc$divisor[which(is.na(presc$divisor))] = 1
+presc$compound[which(is.na(presc$compound))] = 1
 
-presc_raw = presc_raw %>% mutate(opioid_converted = as.numeric(opioid)/as.numeric(divisor))
+presc = presc %>% mutate(opioid_converted = as.numeric(opioid)/as.numeric(divisor))
 
 ```
 
 ```{r}
 
-presc_raw <- presc_raw %>% 
+presc <- presc %>% 
   mutate(conversion_factor = 
     if_else(grepl('BUPRENORPHINE', GENERIC_NAME) & grepl('PATCH', DOSAGE_FORM_DESC), 12.6, 
     if_else(grepl('BUPRENORPHINE', GENERIC_NAME) & grepl('AMPUL', DOSAGE_FORM_DESC), 30,
@@ -173,56 +173,111 @@ presc_raw <- presc_raw %>%
     if_else(grepl('TAPENTADOL', GENERIC_NAME), 0.4,
     if_else(grepl('TRAMADOL', GENERIC_NAME), 0.1, 0))))))))))))))))))))))))
 
-#unique(presc_raw$conversion_factor)
-
-presc_raw$MME <- round((presc_raw$opioid_converted*presc_raw$DISPENSED_QTY*presc_raw$conversion_factor)/presc_raw$DAYS_SUPPLY,2)
-
-unique(presc_raw$MME)
-
-df = presc_raw %>% filter(grepl('PATCH', presc_raw$DOSAGE_FORM_DESC))
-
-table(df$DOSAGE_FORM_DESC, df$GENERIC_NAME)
-
 ```
 
 
-
-```{r, warning=FALSE, message=FALSE}
-
+```{r}
 
 #presc %>% group_by(generic_name) %>% summarise(count = n()) %>% arrange(count)
 presc <- presc %>% 
   mutate(generic_name = 
-    if_else(grepl('DIHYDROCODEINE BITARTR', presc_raw$GENERIC_NAME), 'DIHYDROCODEINE BITARTRATE', 
-    if_else(grepl('BUPRENORPHINE', presc_raw$GENERIC_NAME), 'BUPRENORPHINE',
-    if_else(grepl('HYDROCODONE BITARTRAT', presc_raw$GENERIC_NAME), 'HYDROCODONE BITARTRATE',
-    if_else(grepl('MORPHINE SULFATE', presc_raw$GENERIC_NAME), 'MORPHINE SULFATE',
-    if_else(grepl('OXYCODONE', presc_raw$GENERIC_NAME), 'OXYCODONE', 
-    if_else(grepl('PENTAZOCINE', presc_raw$GENERIC_NAME), 'PENTAZOCINE',
-    if_else(grepl('TRAMADOL', presc_raw$GENERIC_NAME), 'TRAMADOL',
-    if_else(grepl('CODEINE PHOSPHATE', presc_raw$GENERIC_NAME), 'CODEINE PHOSPHATE',
-    if_else(grepl('OPIUM/BELLADONNA', presc_raw$GENERIC_NAME), 'OPIUM/BELLADONNA', 
-    if_else(grepl('FENTANYL', presc_raw$GENERIC_NAME), 'FENTANYL',
-    if_else(grepl('HYDROMORPHONE', presc_raw$GENERIC_NAME), 'HYDROMORPHONE', 
-    if_else(grepl('MEPERIDINE', presc_raw$GENERIC_NAME), 'MEPERIDINE', GENERIC_NAME
+    if_else(grepl('DIHYDROCODEINE BITARTR', presc$GENERIC_NAME), 'DIHYDROCODEINE BITARTRATE', 
+    if_else(grepl('BUPRENORPHINE', presc$GENERIC_NAME), 'BUPRENORPHINE',
+    if_else(grepl('HYDROCODONE BITARTRAT', presc$GENERIC_NAME), 'HYDROCODONE BITARTRATE',
+    if_else(grepl('MORPHINE SULFATE', presc$GENERIC_NAME), 'MORPHINE SULFATE',
+    if_else(grepl('OXYCODONE', presc$GENERIC_NAME), 'OXYCODONE', 
+    if_else(grepl('PENTAZOCINE', presc$GENERIC_NAME), 'PENTAZOCINE',
+    if_else(grepl('TRAMADOL', presc$GENERIC_NAME), 'TRAMADOL',
+    if_else(grepl('CODEINE PHOSPHATE', presc$GENERIC_NAME), 'CODEINE PHOSPHATE',
+    if_else(grepl('OPIUM/BELLADONNA', presc$GENERIC_NAME), 'OPIUM/BELLADONNA', 
+    if_else(grepl('FENTANYL', presc$GENERIC_NAME), 'FENTANYL',
+    if_else(grepl('HYDROMORPHONE', presc$GENERIC_NAME), 'HYDROMORPHONE', 
+    if_else(grepl('MEPERIDINE', presc$GENERIC_NAME), 'MEPERIDINE', GENERIC_NAME
     )))))))))))))
 
 
 presc <- presc %>% 
   mutate(dosage_form = 
-    if_else(grepl('TABLET', presc_raw$DOSAGE_FORM_DESC), 'PILL', 
-    if_else(grepl('VIAL', presc_raw$DOSAGE_FORM_DESC), 'VIAL',
-    if_else(grepl('SYRINGE', presc_raw$DOSAGE_FORM_DESC), 'VIAL',
-    if_else(grepl('CAPSULE', presc_raw$DOSAGE_FORM_DESC), 'PILL', 
-    if_else(grepl('PATCH', presc_raw$DOSAGE_FORM_DESC), 'PATCH',
-    if_else(grepl('LOZENGE', presc_raw$DOSAGE_FORM_DESC), 'LOZENGE',
-    if_else(grepl('AMPUL', presc_raw$DOSAGE_FORM_DESC), 'AMPUL',
-    if_else(grepl('SPRAY', presc_raw$DOSAGE_FORM_DESC), 'SPRAY',
-    if_else(grepl('SOLUTION', presc_raw$DOSAGE_FORM_DESC), 'LIQUID',
-    if_else(grepl('LIQUID', presc_raw$DOSAGE_FORM_DESC), 'LIQUID',
-    if_else(grepl('CONCENTRATE', presc_raw$DOSAGE_FORM_DESC), 'LIQUID',
-    if_else(grepl('SUPPOSITORY', presc_raw$DOSAGE_FORM_DESC), 'SUPPOSITORY', 'NA'
+    if_else(grepl('TABLET', presc$DOSAGE_FORM_DESC), 'PILL', 
+    if_else(grepl('VIAL', presc$DOSAGE_FORM_DESC), 'VIAL',
+    if_else(grepl('SYRINGE', presc$DOSAGE_FORM_DESC), 'VIAL',
+    if_else(grepl('CAPSULE', presc$DOSAGE_FORM_DESC), 'PILL', 
+    if_else(grepl('PATCH', presc$DOSAGE_FORM_DESC), 'PATCH',
+    if_else(grepl('LOZENGE', presc$DOSAGE_FORM_DESC), 'LOZENGE',
+    if_else(grepl('AMPUL', presc$DOSAGE_FORM_DESC), 'AMPUL',
+    if_else(grepl('SPRAY', presc$DOSAGE_FORM_DESC), 'SPRAY',
+    if_else(grepl('SOLUTION', presc$DOSAGE_FORM_DESC), 'LIQUID',
+    if_else(grepl('LIQUID', presc$DOSAGE_FORM_DESC), 'LIQUID',
+    if_else(grepl('CONCENTRATE', presc$DOSAGE_FORM_DESC), 'LIQUID',
+    if_else(grepl('SUPPOSITORY', presc$DOSAGE_FORM_DESC), 'SUPPOSITORY', 'NA'
     )))))))))))))
+```
+
+```{r}
+
+# FIXING DAYS SUPPLY
+loop_values = presc %>% group_by(generic_name, dosage_form) %>% summarise(count = n())
+
+generics = loop_values[[1]]
+dosages = loop_values[[2]]
+
+min_supply_vec=rep(0, length(generics))
+max_supply_vec=rep(0, length(generics))
+min_dispensed_vec=rep(0, length(generics))
+max_dispensed_vec=rep(0, length(generics))
+
+for (i in 1:length(generics)){
+  presc_subset = presc %>% filter(generic_name==generics[i] & dosage_form==dosages[i])
+  min_supply_vec[i]=round(quantile(presc_subset$DAYS_SUPPLY , probs=seq(0, 1, by=0.005))[[2]])
+  max_supply_vec[i]=round(quantile(presc_subset$DAYS_SUPPLY, probs=seq(0, 1, by=0.005))[[200]])
+  
+  min_dispensed_vec[i]=round(quantile(presc_subset$DISPENSED_QTY , probs=seq(0, 1, by=0.005))[[5]])
+  max_dispensed_vec[i]=round(quantile(presc_subset$DISPENSED_QTY, probs=seq(0, 1, by=0.005))[[195]])
+}
+
+min_supply_vec = min_supply_vec %>% as.data.frame()
+min_supply_vec = min_supply_vec %>% rename(min_supply_val = ".")
+max_supply_vec = max_supply_vec %>% as.data.frame()
+max_supply_vec = max_supply_vec %>% rename(max_supply_val = ".")
+
+min_dispensed_vec = min_dispensed_vec %>% as.data.frame()
+min_dispensed_vec = min_dispensed_vec %>% rename(min_dispensed_val = ".")
+max_dispensed_vec = max_dispensed_vec %>% as.data.frame()
+max_dispensed_vec = max_dispensed_vec %>% rename(max_dispensed_val = ".")
+
+values = bind_cols(loop_values, min_supply_vec)
+values = bind_cols(values, max_supply_vec)
+values = bind_cols(values, min_dispensed_vec)
+values = bind_cols(values, max_dispensed_vec)
+values = values %>% select(-count)
+
+presc = merge(presc, values, all.x = TRUE, key=c("generic_name, dosage_form"))
+
+presc = presc %>% mutate(days_supply = if_else(DAYS_SUPPLY<min_supply_val, as.integer(min_supply_val), 
+                                           if_else(DAYS_SUPPLY>max_supply_val, as.integer(max_supply_val),
+                                                   as.integer(DAYS_SUPPLY))))
+
+presc = presc %>% mutate(dispensed_qty = if_else(DISPENSED_QTY<min_dispensed_val,
+                                                       as.integer(min_dispensed_val), 
+                                           if_else(DISPENSED_QTY>max_dispensed_val, 
+                                                   as.integer(max_dispensed_val),
+                                                   as.integer(DISPENSED_QTY))))
+
+```
+
+
+```{r}
+
+#unique(presc$conversion_factor)
+
+presc$mme <- round((presc$opioid_converted*presc$dispensed_qty*presc$conversion_factor)/presc$days_supply,2)
+
+quantile(presc$mme, probs=seq(0, 1, by=0.005))
+```
+
+
+
+```{r, warning=FALSE, message=FALSE}
 
 presc_summary = presc %>% group_by(PERSON_ID) %>% summarise(num_presc = n(), 
                                             most_presc_drug = mode_fun(generic_name),
@@ -232,10 +287,18 @@ presc_summary = presc %>% group_by(PERSON_ID) %>% summarise(num_presc = n(),
                                             most_dose_form = mode_fun(dosage_form),
                                             pill_count = sum(grepl('PILL', dosage_form)),
                                             patch_count = sum(grepl('PATCH', dosage_form)),
-                                            liquid_count = sum(grepl('LIQUID', dosage_form)))
+                                            liquid_count = sum(grepl('LIQUID', dosage_form)),
+                                            avg_mme = round(mean(mme)),
+                                            median_mme = round(median(mme)),
+                                            mode_mme = round(mode_fun(mme)),
+                                            avg_supply = round(mean(days_supply)),
+                                            avg_dispensed = round(mean(dispensed_qty)))
 
+final_data = merge(dem, age_df %>% select(PERSON_ID, age), all.x = TRUE, all.y = TRUE, key="PERSON_ID")
+final_data = merge(final_data, prog_summary, all.x = TRUE, all.y = TRUE, key="PERSON_ID")
+final_data = merge(final_data, presc_summary, all.x = TRUE, all.y = TRUE, key="PERSON_ID")
 
-
+summary(final_data %>% mutate_if(is.character, as.factor))
 
 ```
 

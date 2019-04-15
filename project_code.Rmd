@@ -302,3 +302,7 @@ summary(final_data %>% mutate_if(is.character, as.factor))
 
 ```
 
+```{r}
+write.csv(final_data, "final_data.csv", row.names = FALSE)
+```
+

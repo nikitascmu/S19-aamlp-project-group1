@@ -303,6 +303,10 @@ summary(final_data %>% mutate_if(is.character, as.factor))
 ```
 
 ```{r}
+
+final_data = merge(final_data, outcome_df %>% select(PERSON_ID, od_type), key="PERSON_ID")
 write.csv(final_data, "final_data.csv", row.names = FALSE)
+
+
 ```
 

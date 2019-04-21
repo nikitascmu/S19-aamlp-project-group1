@@ -15,9 +15,9 @@ dat <- fread("final_data.csv") %>% as_tibble()
 # Using od_type as outcome 
 # could also use total_da
 
-# To do:
-# convert features to factors
-# convert od_type to binary 
+
+# For survival analysis,
+# should we do the number of years since being admitted in the system? to allow us to look at more than just the 2009 cohort?
 ```{r}
 # Multivariate logistic regression
 
@@ -25,6 +25,11 @@ dat <- fread("final_data.csv") %>% as_tibble()
 dat_scrambled <- dat[sample(1:nrow(dat)),]
 dat_train <- dat_scrambled[1:(dim(dat_scrambled)[1]/2),]
 dat_test <- dat_scrambled[-(1:(dim(dat_scrambled)[1]/2)),]
+
+dat_binary_odtype <- dat
+dat_binary_odtype$od_type[which(dat_binary_odtype$od_type=="No Overdose")] <- 0
+dat_binary_odtype$od_type[which(dat_binary_odtype$od_type=="Non-Opiate Overdose")] <- 0
+dat_binary_odtype$od_type[which(dat_binary_odtype$od_type=="Opiate Overdose")] <- 1
 
 
 # Predicting "Opiate Overdose" vs. no overdose or non-opiate overdose based on total_cr_drug_cases
@@ -50,19 +55,62 @@ dat_test %>%
 
 ```
 
+```{r}
+library(ROCR)
+columns_for_ROC =  # columns: predictions, labels
+  dat_test %>%
+  select(od_type) %>%
+  bind_cols(predictions) %>% mutate(od_type=od_type=="Opiate Overdose")   # true labels, and their predictions
+
+# plot it:
+prediction(predictions=columns_for_ROC$preds,
+           labels=columns_for_ROC$od_type) %>%
+  performance("tpr", "fpr") %>% plot()
+  # performance("auc")  # swap out to get AUC
+
+```
 
 ```{r}
 # Regularized multivariate logistic regression (lasso)
+# Jumping-off point from Dr. Weiss' example to work off of:
+
+# library(glmnet)
+# library(tidyr)
+# mushmm = model.matrix(type~., mush[,-17]) # turns categorical vars into indicators
+# mushmmtrain = mushmm[1:5000,]
+# mushmmtest = mushmm[-(1:5000),]
+# lr1 = glmnet(x = mushmmtrain, y=mushtrain$type, family="binomial")
+# str(lr1)
+# which(coef(lr1)[,20] > 0)
+# which(coef(lr1)[,10] > 0)
+# 
+# data.frame(preds = lr1 %>% predict(mushmmtest, s=0.2, type="response"),
+#            y = mushtest$type) %>% tbl_df() %>%
+#   table() %>% data.frame() %>% tbl_df() %>%
+#   transmute(type=y, preds=X1, Freq=Freq)%>%
+#   arrange(preds) %>%
+#   group_by(preds) %>%
+#   mutate(testfreq = sum(Freq)) %>%
+#   mutate(testfreq = Freq/testfreq) %>% 
+#   ungroup() %>%
+#   filter(type=='p') %>%
+#   select(preds,testfreq)
+
 
 ```
+
 
 ```{r}
 # Random forest
 library(randomForest)
 dat_scrambled <- as_tibble(dat_scrambled)
-# NAs introduced by coercion
-forest = randomForest(formula = as.factor(dat_scrambled$od_type) ~ .,
-                      data=dat_scrambled[, c(1,2,3,4,17)] %>% filter(!is.na(od_type)))
+
+# NAs introduced by coercion; col 14, 15, 16 (119428)
+
+data_fac <- dat_binary_odtype %>% mutate_if(is.character, as.factor)
+
+forest = randomForest(formula = as.factor(data_fac$od_type) ~ .,
+                      data=data_fac[, -c(14:16)] %>% filter(!is.na(od_type)))
 forest$importance
 library(ggplot2)
 ggplot(data=forest$importance %>% as.data.frame() %>%
@@ -70,17 +118,18 @@ ggplot(data=forest$importance %>% as.data.frame() %>%
          arrange(MeanDecreaseGini) %>%
          mutate(name=factor(name, name))) +
   geom_bar(aes(x=name, y=MeanDecreaseGini), stat="identity") + coord_flip()
-predict(forest, dat_scrambled, type = "prob") %>% hist(breaks=100) # %>% head()
+predict(forest, data_fac, type = "prob") %>% hist(breaks=100) # %>% head()
 
 ```
+
 
 ```{r}
 # Boosting
 library(ada)
 aforest = ada(formula = od_type ~ .,
-              data=dat_train %>% filter(!is.na(od_type)),
+              data=data_fac[-c(14:16)] %>% filter(!is.na(od_type)),
               iter=10)
-predict(aforest, dat_train[,c(1:10,34)],
+predict(aforest, data_fac[,-c(14:16)],
         type = "probs") %>% hist(breaks=100) # %>% head()
 
 ```
@@ -88,12 +137,12 @@ predict(aforest, dat_train[,c(1:10,34)],
 ```{r}
 # Gradient boosting machine
 library(gbm)
-gforest = gbm(formula = od_type=="Opiate Overdose" ~ .,
-              data=dat_scrambled %>% filter(!is.na(od_type)) %>%
+gforest = gbm(formula = od_type==1 ~ .,
+              data=data_fac %>% filter(!is.na(od_type)) %>%
                 mutate_if(is.logical, as.factor),
               interaction.depth=10,
               cv.folds = 2)
-predict(gforest, dat_scrambled %>% mutate_if(is.logical, as.factor),
+predict(gforest, data_fac %>% mutate_if(is.logical, as.factor),
         n.trees=gforest$n.trees,
         type = "response") %>% hist(breaks=100)  # %>% head()
 

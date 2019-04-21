@@ -1,0 +1,14 @@
+---
+title: "RostL_project_code.Rmd"
+author: "Lauren Rost"
+date: "4/21/2019"
+output: pdf_document
+---
+
+
+```{r}
+dat <- fread("final_data.csv") %>% as_tibble()
+```
+
+
+```{r}

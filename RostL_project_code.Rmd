@@ -10,5 +10,98 @@ output: pdf_document
 dat <- fread("final_data.csv") %>% as_tibble()
 ```
 
+# Maybe we should treat instance as a x to train on, and not consolidate all people into one line. Might be more informative to time data.
+
+# Using od_type as outcome 
+# could also use total_da
+
+# To do:
+# convert features to factors
+# convert od_type to binary 
+```{r}
+# Multivariate logistic regression
+
+# 50-50 split
+dat_scrambled <- dat[sample(1:nrow(dat)),]
+dat_train <- dat_scrambled[1:(dim(dat_scrambled)[1]/2),]
+dat_test <- dat_scrambled[-(1:(dim(dat_scrambled)[1]/2)),]
+
+
+# Predicting "Opiate Overdose" vs. no overdose or non-opiate overdose based on total_cr_drug_cases
+lr = with(dat_train, glm(od_type=="Opiate Overdose" ~ total_cr_drug_cases, family = binomial("logit")))  
+lr %>% summary()    # estimates are the data coefficients; intercept = B0; each after is a B for the dummy variable; stars give the level of significance of the coefficients; all values are compared to a reference value (b was the reference value here); "values" can also be called "indicator values"; extract the Beta-hats
+lr %>% str()
+lr %>% summary() %>% coef()
+predictions = data.frame(preds=(lr %>% predict(dat_test, type="response"))) # get predictions on new data; "response" gives predicted probabilities
+library(ggplot2)
+dat_test %>%
+  select(od_type) %>%
+  bind_cols(predictions) %>%
+  table() %>%
+  data.frame() %>% as_tibble() %>%
+  group_by(preds) %>%
+  mutate(testfreq = sum(Freq)) %>%
+  mutate(testfreq = Freq/testfreq) %>%
+  ungroup() %>% filter(od_type=='Opiate Overdose') %>%
+  select(preds,testfreq) %>%   # this model is relatively well-calibrated; if predictions perfectly calibrated, y=x
+  mutate_all(as.character) %>%
+  mutate_all(as.numeric) %>%
+  ggplot(data=., aes(x=preds, y=testfreq)) + geom_point() + geom_abline(slope=1)
+
+```
+
 
 ```{r}
+# Regularized multivariate logistic regression (lasso)
+
+```
+
+```{r}
+# Random forest
+library(randomForest)
+dat_scrambled <- as_tibble(dat_scrambled)
+# NAs introduced by coercion
+forest = randomForest(formula = as.factor(dat_scrambled$od_type) ~ .,
+                      data=dat_scrambled[, c(1,2,3,4,17)] %>% filter(!is.na(od_type)))
+forest$importance
+library(ggplot2)
+ggplot(data=forest$importance %>% as.data.frame() %>%
+         mutate(name=as.factor(rownames(.))) %>%
+         arrange(MeanDecreaseGini) %>%
+         mutate(name=factor(name, name))) +
+  geom_bar(aes(x=name, y=MeanDecreaseGini), stat="identity") + coord_flip()
+predict(forest, dat_scrambled, type = "prob") %>% hist(breaks=100) # %>% head()
+
+```
+
+```{r}
+# Boosting
+library(ada)
+aforest = ada(formula = od_type ~ .,
+              data=dat_train %>% filter(!is.na(od_type)),
+              iter=10)
+predict(aforest, dat_train[,c(1:10,34)],
+        type = "probs") %>% hist(breaks=100) # %>% head()
+
+```
+
+```{r}
+# Gradient boosting machine
+library(gbm)
+gforest = gbm(formula = od_type=="Opiate Overdose" ~ .,
+              data=dat_scrambled %>% filter(!is.na(od_type)) %>%
+                mutate_if(is.logical, as.factor),
+              interaction.depth=10,
+              cv.folds = 2)
+predict(gforest, dat_scrambled %>% mutate_if(is.logical, as.factor),
+        n.trees=gforest$n.trees,
+        type = "response") %>% hist(breaks=100)  # %>% head()
+
+```
+
+```{r}
+# K-means clustering
+
+``` 
+
+

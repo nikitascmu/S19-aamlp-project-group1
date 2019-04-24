@@ -91,6 +91,9 @@ final_df <- dummify(final_data)
 
 # For survival analysis,
 # should we do the number of years since being admitted in the system? to allow us to look at more than just the 2009 cohort?
+
+# use balanced.data - for training purposes, test data from data_df
+# final_df$target <- opiate overdose vs. the rest
 ```{r}
 # Multivariate logistic regression
 

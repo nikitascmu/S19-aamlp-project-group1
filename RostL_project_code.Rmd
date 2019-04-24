@@ -69,7 +69,14 @@ rm(list=c('c1','c2','c3'))
 #median_mme looks normal and less skewed. We will be using median_mme for prediction purpose. Also, I'm removing columns which are related to overdose date as this column is proxy for target variable and is not available in the future dataset.
 
 ```{r}
-final_data <- final_data %>% select(-c('avg_mme','mode_mme','od_date','od_year','od_month','PERSON_ID'))
+
+final_data$target <- NULL
+final_data$target[final_data$od_type=='No Overdose'] <- 0
+final_data$target[final_data$od_type=='Non-Opiate Overdose'] <- 0
+final_data$target[final_data$od_type=='Opiate Overdose'] <- 1
+
+final_data <- final_data %>% select(-c('avg_mme','mode_mme','od_date','od_year','od_type','od_month','PERSON_ID'))
+
 #dummifying data to create dummy categorical variables
 final_df <- dummify(final_data)
 ```
@@ -215,8 +222,128 @@ predict(gforest, data_fac %>% mutate_if(is.logical, as.factor),
 ```
 
 ```{r}
-# K-means clustering
+library(keras)
+# Neural net
+trans <- function(x){
+  return (log(1+x))
+}
+
+#performing a 50%/50% split
+smp_size <- floor(0.5 * nrow(final_df))
+set.seed(1)
+train_indices <- sample(seq_len(nrow(final_df)),size=smp_size)
+
+
+ytrain <- to_categorical(final_df$target[train_indices]) %>% as.matrix()
+ytest <- to_categorical(final_df$target[-train_indices]) %>% as.matrix()
+
+xtrain <- final_df[train_indices,] %>% select(-c(target)) %>% as.matrix()
+xtest <- final_df[-train_indices,] %>% select(-c(target)) %>% as.matrix()
+
+model <- keras_model_sequential() 
+model %>% 
+  layer_dense(units = 256, activation = 'relu', input_shape = c(41)) %>% 
+  layer_dropout(rate = 0.4) %>% 
+  layer_dense( units= 16, kernel_initializer = "uniform", activation = "relu") %>%
+  layer_dropout(0.1) %>%
+  layer_dense(units = 128, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 2, activation = 'softmax')
+
+model %>% compile(
+  loss = 'categorical_crossentropy',
+  optimizer = optimizer_rmsprop(),
+  metrics = c('accuracy')
+)
+
+history <- model %>% fit(
+  xtrain, ytrain, 
+  epochs = 30, batch_size = 256, 
+  validation_split = 0.2
+)
+
+pred_model = model %>% predict(xtest)
+library(pROC)
+roc(ytest,pred_model,plot=TRUE,legacy.axes=TRUE, col="#377eb8",print.auc=TRUE,percent = TRUE,print.auc.y=60,
+    xlab="false positive percentage",ylab="true positive percentage")
 
 ``` 
 
+#balancing dataset
+
+```{r}
+
+#logistic regression
+
+smp_size <- floor(0.5 * nrow(final_df))
+set.seed(1)
+train_indices <- sample(seq_len(nrow(final_df)),size=smp_size)
+xtrain <- final_df[train_indices,]
+xtest <- final_df[-train_indices,] 
+
+xtrain$target <- factor(xtrain$target)
+xtest$target <- factor(xtest$target)
+
+model_logistic <- glm (target~., data=xtrain, family = binomial,control = list(maxit = 50))
+
+## Predict the Values
+predict_logistic <- predict(model_logistic, xtest, type = 'response')
+
+## Create Confusion Matrix
+table(xtest$target, predict_logistic > 0.5)
+```
+
+#Not able to capture a single opioid overdose case with logistic regression. Next we are trying SMOTE (Synthetic Minority Oversampling Technique)
+
+```{r}
+library(DMwR)
+
+#logistic with sampling
+
+set.seed(1)
+balanced.data <- SMOTE(target ~., xtrain, perc.over = 1500, k = 5, perc.under = 400)
+as.data.frame(table(balanced.data$target))
+
+model_logistic_balanced <- glm (target~.-race_White -gender_No.Data.and.Other -most_presc_drug_TRAMADOL-most_dose_form_PILL, 
+                                data=balanced.data, family = binomial,control = list(maxit = 50))
+
+## Predict the Values
+pred_logistic_balanced <- predict(model_logistic_balanced, xtest, type = 'response')
+
+## Create Confusion Matrix
+table(xtest$target, pred_logistic_balanced > 0.5)
+```
+
+#here we are capturing atleast 79 opioid overdose. Logistic regression CV:
+
+```{r}
+library(caret)
+
+#Cross Validation Logistic regression
+
+balanced.data <- balanced.data %>% select(-c('race_White','gender_No.Data.and.Other','most_presc_drug_TRAMADOL','most_dose_form_PILL'))
+
+fitControl <- trainControl(method = "repeatedcv",number = 5,repeats = 3)
+
+caret.logreg.fit <- train(target ~ ., data = balanced.data, method = "glm",family = binomial(link = "logit"),
+                          trControl = fitControl)
+
+
+#predicted values for testdata:
+pred_balanced_logistic_cv <- predict(caret.logreg.fit$finalModel,xtest,type = 'response')
+
+#test with confusion matrix
+table(pred_balanced_logistic_cv>0.5,xtest$target)
+
+```
+
+#Results are same as the normal logistic regression 
+
+```{r}
+library(e1071)
+
+tune <- tune.svm(target~., data = balanced.data, gamma =seq(.02, 0.1, by = .02), cost = seq(0.2,1, by = 0.2))
+
+
+```
 

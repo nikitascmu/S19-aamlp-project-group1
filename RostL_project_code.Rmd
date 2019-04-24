@@ -1,6 +1,6 @@
 ---
 title: "RostL_project_code.Rmd"
-author: "Lauren Rost"
+author: "Lauren Rost""Mridul Gangwar"
 date: "4/21/2019"
 output: pdf_document
 ---
@@ -21,7 +21,7 @@ table(final_data$od_type)
 table(final_data$od_year)
 
 #ggplot(final_data, aes(as.factor(od_type),patch_count )) + geom_point() + labs(y = "Patch count", x = "opioid overdose")
-ggplot(final_data, aes(as.factor(od_type),age )) + geom_point() + labs(y = "Patch count", x = "opioid overdose")
+#ggplot(final_data, aes(as.factor(od_type),age )) + geom_point() + labs(y = "Patch count", x = "opioid overdose")
 ```
 
 ```{r}
@@ -79,6 +79,58 @@ final_data <- final_data %>% select(-c('avg_mme','mode_mme','od_date','od_year',
 
 #dummifying data to create dummy categorical variables
 final_df <- dummify(final_data)
+```
+
+# Multivariate Logistic Regression
+
+```{r}
+
+#logistic regression
+
+smp_size <- floor(0.5 * nrow(final_df))
+set.seed(1)
+train_indices <- sample(seq_len(nrow(final_df)),size=smp_size)
+
+final_df <- final_df %>% select(-c('race_White','gender_No.Data.and.Other','most_presc_drug_TRAMADOL','most_dose_form_PILL'))
+
+xtrain <- final_df[train_indices,]
+xtest <- final_df[-train_indices,] 
+
+xtrain$target <- factor(xtrain$target)
+xtest$target <- factor(xtest$target)
+
+model_logistic <- glm (target~., data=xtrain, family = binomial,control = list(maxit = 50))
+
+## Predict the Values
+predict_logistic <- predict(model_logistic, xtest, type = 'response')
+
+## Create Confusion Matrix
+table(xtest$target, predict_logistic > 0.35)
+```
+
+#Not able to capture a single opioid overdose case with logistic regression. Next we are trying SMOTE (Synthetic Minority Oversampling Technique)
+
+```{r}
+library(DMwR)
+
+#logistic with Over sampling
+
+set.seed(1)
+balanced.data <- SMOTE(target ~., xtrain, perc.over = 1500, k = 5, perc.under = 400)
+#as.data.frame(table(balanced.data$target))
+
+fitControl <- trainControl(method = "repeatedcv",number = 5,repeats = 3)
+
+model_logistic_cv <- train(target ~ ., data = balanced.data, method = "glm",family = binomial(link = "logit"),
+                          trControl = fitControl)
+
+
+#predicted values for testdata:
+pred_balanced_logistic_cv <- predict(model_logistic_cv$finalModel,xtest,type = 'response')
+
+#test with confusion matrix
+table(pred_balanced_logistic_cv>0.35,xtest$target)
+
 ```
 
 
@@ -269,80 +321,13 @@ roc(ytest,pred_model,plot=TRUE,legacy.axes=TRUE, col="#377eb8",print.auc=TRUE,pe
 
 ``` 
 
-#balancing dataset
-
-```{r}
-
-#logistic regression
-
-smp_size <- floor(0.5 * nrow(final_df))
-set.seed(1)
-train_indices <- sample(seq_len(nrow(final_df)),size=smp_size)
-xtrain <- final_df[train_indices,]
-xtest <- final_df[-train_indices,] 
-
-xtrain$target <- factor(xtrain$target)
-xtest$target <- factor(xtest$target)
-
-model_logistic <- glm (target~., data=xtrain, family = binomial,control = list(maxit = 50))
-
-## Predict the Values
-predict_logistic <- predict(model_logistic, xtest, type = 'response')
-
-## Create Confusion Matrix
-table(xtest$target, predict_logistic > 0.5)
-```
-
-#Not able to capture a single opioid overdose case with logistic regression. Next we are trying SMOTE (Synthetic Minority Oversampling Technique)
-
-```{r}
-library(DMwR)
-
-#logistic with sampling
-
-set.seed(1)
-balanced.data <- SMOTE(target ~., xtrain, perc.over = 1500, k = 5, perc.under = 400)
-as.data.frame(table(balanced.data$target))
-
-model_logistic_balanced <- glm (target~.-race_White -gender_No.Data.and.Other -most_presc_drug_TRAMADOL-most_dose_form_PILL, 
-                                data=balanced.data, family = binomial,control = list(maxit = 50))
-
-## Predict the Values
-pred_logistic_balanced <- predict(model_logistic_balanced, xtest, type = 'response')
-
-## Create Confusion Matrix
-table(xtest$target, pred_logistic_balanced > 0.5)
-```
-
-#here we are capturing atleast 79 opioid overdose. Logistic regression CV:
-
-```{r}
-library(caret)
-
-#Cross Validation Logistic regression
-
-balanced.data <- balanced.data %>% select(-c('race_White','gender_No.Data.and.Other','most_presc_drug_TRAMADOL','most_dose_form_PILL'))
-
-fitControl <- trainControl(method = "repeatedcv",number = 5,repeats = 3)
-
-caret.logreg.fit <- train(target ~ ., data = balanced.data, method = "glm",family = binomial(link = "logit"),
-                          trControl = fitControl)
 
 
-#predicted values for testdata:
-pred_balanced_logistic_cv <- predict(caret.logreg.fit$finalModel,xtest,type = 'response')
-
-#test with confusion matrix
-table(pred_balanced_logistic_cv>0.5,xtest$target)
-
-```
-
-#Results are same as the normal logistic regression 
 
 ```{r}
 library(e1071)
 
-tune <- tune.svm(target~., data = balanced.data, gamma =seq(.02, 0.1, by = .02), cost = seq(0.2,1, by = 0.2))
+#tune <- tune.svm(target~., data = balanced.data, gamma =seq(.02, 0.1, by = .02), cost = seq(0.2,1, by = 0.2))
 
 
 ```

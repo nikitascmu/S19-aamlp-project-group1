@@ -91,7 +91,9 @@ smp_size <- floor(0.5 * nrow(final_df))
 set.seed(1)
 train_indices <- sample(seq_len(nrow(final_df)),size=smp_size)
 
-final_df <- final_df %>% select(-c('race_White','gender_No.Data.and.Other','most_presc_drug_TRAMADOL','most_dose_form_PILL'))
+final_df <- final_df %>% select(-c('race_White','gender_No.Data.and.Other','most_presc_drug_TRAMADOL','most_dose_form_PILL',
+                                   'race_American.Indian.Alaskan.Native','cohort','pill_count','race_Asian',
+                                   'most_presc_drug_OTHER','total_acj','most_presc_drug_HYDROMORPHONE'))
 
 xtrain <- final_df[train_indices,]
 xtest <- final_df[-train_indices,] 
@@ -105,13 +107,17 @@ model_logistic <- glm (target~., data=xtrain, family = binomial,control = list(m
 predict_logistic <- predict(model_logistic, xtest, type = 'response')
 
 ## Create Confusion Matrix
-table(xtest$target, predict_logistic > 0.35)
+table(xtest$target, predict_logistic > 0.5)
+
+
 ```
 
 #Not able to capture a single opioid overdose case with logistic regression. Next we are trying SMOTE (Synthetic Minority Oversampling Technique)
 
 ```{r}
+library(caret)
 library(DMwR)
+options(scipen=999)
 
 #logistic with Over sampling
 
@@ -129,10 +135,29 @@ model_logistic_cv <- train(target ~ ., data = balanced.data, method = "glm",fami
 pred_balanced_logistic_cv <- predict(model_logistic_cv$finalModel,xtest,type = 'response')
 
 #test with confusion matrix
-table(pred_balanced_logistic_cv>0.35,xtest$target)
+table(xtest$target,pred_balanced_logistic_cv>0.2)
 
+#quantile(pred_balanced_logistic_cv, probs = seq(0, 1, by= 0.1))
 ```
 
+```{r}
+summary(model_logistic)
+```
+
+
+```{r}
+library(gbm)
+
+set.seed(123)
+fitControl = trainControl(method="cv", number=10, returnResamp = "all")
+
+model_gbm = train(target~., data=balanced.data, method="gbm",distribution="bernoulli", trControl=fitControl, verbose=F, tuneGrid=data.frame(.n.trees=5000, .shrinkage=0.1, .interaction.depth=1, .n.minobsinnode=1))
+
+pred_balanced_gbm <- predict(model_gbm,xtest,type = 'prob')
+
+table(xtest$target,pred_balanced_gbm$'1'>0.2)
+
+```
 
 
 # Maybe we should treat instance as a x to train on, and not consolidate all people into one line. Might be more informative to time data.
@@ -144,7 +169,7 @@ table(pred_balanced_logistic_cv>0.35,xtest$target)
 # For survival analysis,
 # should we do the number of years since being admitted in the system? to allow us to look at more than just the 2009 cohort?
 
-# use balanced.data - for training purposes, test data from data_df
+# use balanced.data - for training purposes, test data from data_df (gbm  cross validation done)
 # final_df$target <- opiate overdose vs. the rest
 ```{r}
 # Multivariate logistic regression

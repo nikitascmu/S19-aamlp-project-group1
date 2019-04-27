@@ -77,9 +77,19 @@ final_data$target[final_data$od_type=='Opiate Overdose'] <- 1
 
 final_data <- final_data %>% select(-c('avg_mme','mode_mme','od_date','od_year','od_type','od_month','PERSON_ID'))
 
+trans <- function(x){
+  return (log(1+x))
+}
+
+
 #dummifying data to create dummy categorical variables
-final_df <- dummify(final_data)
+final_df <- final_data %>% select(-c(target))
+final_df <- dummify(final_df)
+final_df <- final_df  %>% mutate_all(funs(trans))
+final_df$target <- final_data$target
+
 ```
+
 
 # Multivariate Logistic Regression
 
@@ -90,10 +100,6 @@ final_df <- dummify(final_data)
 smp_size <- floor(0.5 * nrow(final_df))
 set.seed(1)
 train_indices <- sample(seq_len(nrow(final_df)),size=smp_size)
-
-final_df <- final_df %>% select(-c('race_White','gender_No.Data.and.Other','most_presc_drug_TRAMADOL','most_dose_form_PILL',
-                                   'race_American.Indian.Alaskan.Native','cohort','pill_count','race_Asian',
-                                   'most_presc_drug_OTHER','total_acj','most_presc_drug_HYDROMORPHONE'))
 
 xtrain <- final_df[train_indices,]
 xtest <- final_df[-train_indices,] 
@@ -107,14 +113,18 @@ model_logistic <- glm (target~., data=xtrain, family = binomial,control = list(m
 predict_logistic <- predict(model_logistic, xtest, type = 'response')
 
 ## Create Confusion Matrix
-table(xtest$target, predict_logistic > 0.5)
+table(xtest$target, predict_logistic > 0.4)
 
 
 ```
 
 #Not able to capture a single opioid overdose case with logistic regression. Next we are trying SMOTE (Synthetic Minority Oversampling Technique)
 
+# identifying important variables using random forest
+
 ```{r}
+library(parallel)
+library(doParallel)
 library(caret)
 library(DMwR)
 options(scipen=999)
@@ -122,8 +132,33 @@ options(scipen=999)
 #logistic with Over sampling
 
 set.seed(1)
-balanced.data <- SMOTE(target ~., xtrain, perc.over = 1500, k = 5, perc.under = 400)
+balanced.data <- SMOTE(target ~., xtrain, perc.over = 500, k = 5, perc.under = 500)
 #as.data.frame(table(balanced.data$target))
+
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+
+fitControl <- trainControl(method = "cv", number = 5, allowParallel = TRUE)
+
+fit <- train(target ~ ., method="rf",data=balanced.data,trControl = fitControl)
+
+var.imp <- varImp(fit)
+var.imp
+```
+
+#running logistic regression using on selected features
+
+```{r}
+
+cols_to_select = c("tram_count","total_da","race_White","total_cr_drug_cases","median_mme","total_cr_cases",
+                   "race_Black.African.American","avg_dispensed","most_presc_drug_OXYMORPHONE.HCL","gender_Male","gender_Female",
+                   "avg_supply","age","total_mh","total_acj","pill_count",
+                   "num_presc","hydrobit_count","oxy_count","most_presc_drug_HYDROCODONE.BITARTRATE","target")
+
+xtrain <- xtrain[,c(cols_to_select)]
+xtest <- xtest[,c(cols_to_select)]
+balanced.data <- balanced.data[,c(cols_to_select)]
+
 
 fitControl <- trainControl(method = "repeatedcv",number = 5,repeats = 3)
 
@@ -135,29 +170,105 @@ model_logistic_cv <- train(target ~ ., data = balanced.data, method = "glm",fami
 pred_balanced_logistic_cv <- predict(model_logistic_cv$finalModel,xtest,type = 'response')
 
 #test with confusion matrix
-table(xtest$target,pred_balanced_logistic_cv>0.2)
+table(xtest$target,pred_balanced_logistic_cv>0.4)
 
 #quantile(pred_balanced_logistic_cv, probs = seq(0, 1, by= 0.1))
 ```
 
+# ridge regression
+
 ```{r}
-summary(model_logistic)
+library(glmnet)
+set.seed(123) 
+
+y = balanced.data$target %>% as.matrix()
+x = balanced.data %>% select(-c(target))   %>% as.matrix()
+
+cv.lasso <- cv.glmnet(x, y, alpha = 0.1, family = "binomial",nfolds=10,type.measure = "auc")
+model <- glmnet(x, y, alpha = 1, family = "binomial",lambda = cv.lasso$lambda.min)
+
+# Make predictions on the test data
+x.test <- xtest %>% select(-c(target)) %>% as.matrix()
+probabilities <- model %>% predict(newx = x.test)
+
+table(xtest$target,probabilities>0.2)
 ```
 
+#random forest
+
+```{r}
+
+fitControl <- trainControl(method = "cv", number = 5, allowParallel = TRUE)
+
+model_rf <- train(target ~ ., method="rf",data=balanced.data,trControl = fitControl)
+
+pred_rf <- predict(model_logistic_cv$finalModel,xtest,type = 'response')
+table(xtest$target,pred_rf>0.4)
+```
+
+
+#gbm
 
 ```{r}
 library(gbm)
 
 set.seed(123)
-fitControl = trainControl(method="cv", number=10, returnResamp = "all")
+fitControl = trainControl(method="cv", number=5, returnResamp = "all",allowParallel = TRUE)
 
 model_gbm = train(target~., data=balanced.data, method="gbm",distribution="bernoulli", trControl=fitControl, verbose=F, tuneGrid=data.frame(.n.trees=5000, .shrinkage=0.1, .interaction.depth=1, .n.minobsinnode=1))
 
-pred_balanced_gbm <- predict(model_gbm,xtest,type = 'prob')
+pred_gbm <- predict(model_gbm,xtest,type = 'prob')
 
-table(xtest$target,pred_balanced_gbm$'1'>0.2)
+table(xtest$target,pred_gbm$'1'>0.2)
 
+stopCluster(cluster)
+registerDoSEQ()
 ```
+
+
+```{r}
+library(keras)
+# Neural net
+
+balanced.data2 <- SMOTE(target ~., xtrain, perc.over = 4800, k = 5, perc.under = 2400)
+
+
+y_train <- as.numeric(balanced.data2$target) %>% as.matrix()
+y_test <- as.numeric(xtest$target) %>% as.matrix()
+
+x_train <- balanced.data2 %>% select(-c(target)) %>% as.matrix()
+x_test <- xtest %>% select(-c(target)) %>% as.matrix()
+
+model_nn <- keras_model_sequential() 
+model_nn <- model_nn %>% 
+  layer_dense(units = 256, activation = 'tanh', input_shape = c(20)) %>% 
+  layer_dropout(rate = 0.4) %>% 
+  layer_dense( units= 256, kernel_initializer = "uniform", activation = "tanh") %>%
+  layer_dropout(0.1) %>%
+  layer_dense(units = 64, activation = 'relu') %>%
+  layer_dropout(rate = 0.3) %>%
+  layer_dense(units = 1, activation = 'softmax')
+
+model_nn %>% compile(
+  loss = 'binary_crossentropy',
+  optimizer = optimizer_rmsprop(),
+  metrics = c('accuracy')
+)
+
+history <- model_nn %>% fit(
+  x_train, y_train, 
+  epochs = 50, batch_size = 128, 
+  validation_split = 0.2
+)
+
+pred_model_nn = model_nn %>% predict(x_test)
+library(pROC)
+roc(y_test,pred_model_nn,plot=TRUE,legacy.axes=TRUE, col="#377eb8",print.auc=TRUE,percent = TRUE,print.auc.y=60,
+    xlab="false positive percentage",ylab="true positive percentage")
+
+``` 
+
+
 
 
 # Maybe we should treat instance as a x to train on, and not consolidate all people into one line. Might be more informative to time data.
@@ -301,62 +412,7 @@ predict(gforest, data_fac %>% mutate_if(is.logical, as.factor),
 
 ```
 
-```{r}
-library(keras)
-# Neural net
-trans <- function(x){
-  return (log(1+x))
-}
-
-#performing a 50%/50% split
-smp_size <- floor(0.5 * nrow(final_df))
-set.seed(1)
-train_indices <- sample(seq_len(nrow(final_df)),size=smp_size)
-
-
-ytrain <- to_categorical(final_df$target[train_indices]) %>% as.matrix()
-ytest <- to_categorical(final_df$target[-train_indices]) %>% as.matrix()
-
-xtrain <- final_df[train_indices,] %>% select(-c(target)) %>% as.matrix()
-xtest <- final_df[-train_indices,] %>% select(-c(target)) %>% as.matrix()
-
-model <- keras_model_sequential() 
-model %>% 
-  layer_dense(units = 256, activation = 'relu', input_shape = c(41)) %>% 
-  layer_dropout(rate = 0.4) %>% 
-  layer_dense( units= 16, kernel_initializer = "uniform", activation = "relu") %>%
-  layer_dropout(0.1) %>%
-  layer_dense(units = 128, activation = 'relu') %>%
-  layer_dropout(rate = 0.3) %>%
-  layer_dense(units = 2, activation = 'softmax')
-
-model %>% compile(
-  loss = 'categorical_crossentropy',
-  optimizer = optimizer_rmsprop(),
-  metrics = c('accuracy')
-)
-
-history <- model %>% fit(
-  xtrain, ytrain, 
-  epochs = 30, batch_size = 256, 
-  validation_split = 0.2
-)
-
-pred_model = model %>% predict(xtest)
-library(pROC)
-roc(ytest,pred_model,plot=TRUE,legacy.axes=TRUE, col="#377eb8",print.auc=TRUE,percent = TRUE,print.auc.y=60,
-    xlab="false positive percentage",ylab="true positive percentage")
-
-``` 
 
 
 
-
-```{r}
-library(e1071)
-
-#tune <- tune.svm(target~., data = balanced.data, gamma =seq(.02, 0.1, by = .02), cost = seq(0.2,1, by = 0.2))
-
-
-```
 

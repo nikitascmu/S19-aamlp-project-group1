@@ -283,7 +283,7 @@ plot.roc(xtest$target,pred_gbm$'1', col="#FFBB00",print.auc=TRUE,add=TRUE,percen
 plot.roc(xtest$target,pred_ada[,2], col="#763626",print.auc=TRUE,add=TRUE,percent=TRUE,print.auc.y=20)
 plot.roc(xtest$target,pred_model_nn, col="#375E97",print.auc=TRUE,add=TRUE,percent=TRUE,print.auc.y=10)
 
-legend("bottomright",legend=c("Logistic regression","Ridge LR","Random Forest","Gradient Boosting","Ada Boost","Neural Net"),
+legend("bottomright",legend=c("Logistic regressio (LR)","Ridge LR","Random Forest","Gradient Boosting","Ada Boost","Neural Net"),
             col=c("#377eb8","#4daf4a","#FF420E","#FFBB00","#763626","#375E97"),lwd=4)
 
 ```

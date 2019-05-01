@@ -312,36 +312,32 @@ write.csv(final_data, "final_data.csv", row.names = FALSE)
 
 ### Survival Analysis
 
-```{r 2009 Cohort}
+```{r Everybody irrespective of when they joined}
 
-#most overdoses occur in the 2009 cohort, so makes sense to examine this one
-#prog %>% group_by(cohort) %>% summarise(od = sum(OPIATE_OVERDOSE!="No Overdose"))
+prog = prog %>% group_by(PERSON_ID) %>% mutate(start_year=min(YEAR))
 
-prog = prog %>% group_by(PERSON_ID) %>% mutate(cohort=min(YEAR))
-prog_cohort2009 = prog %>% filter(cohort==2009)
+prog = prog %>% mutate(months = (YEAR%%start_year*12) + MONTH)
 
-paste("There are", length(unique(prog_cohort2009$PERSON_ID)), "individuals in the 2009 Cohort")
+prog = prog %>% group_by(PERSON_ID) %>% mutate(min_month_year = min(months))
 
-prog_cohort2009$year_month <- (as.integer(prog_cohort2009$YEAR)%%2009)*12+as.integer(prog_cohort2009$MONTH)
+prog = prog %>% mutate(month_seq = months - min_month_year + 1)
 
-prog_cohort2009$od_year_month <- (as.integer(prog_cohort2009$OVERDOSE_YEAR)%%2009)*12+as.integer(prog_cohort2009$OVERDOSE_MONTH)
+prog$od_year_month = (as.integer(prog$OVERDOSE_YEAR)%%prog$start_year)*12+as.integer(prog$OVERDOSE_MONTH)
 
-prog_cohort2009 = prog_cohort2009 %>% group_by(PERSON_ID) %>% mutate(min_yearmonth=min(year_month))
-#prog_cohort2009 = prog_cohort2009 %>% filter(min_yearmonth==1)
+prog$od_seq = prog$od_year_month - prog$min_month_year + 1
 
-survival_data = prog_cohort2009 %>% group_by(PERSON_ID) %>% summarise(time_yearmonth = max(year_month), 
-                                                      od_time = max(od_year_month))
+survival_data = prog %>% group_by(PERSON_ID) %>% summarise(time_yearmonth = max(month_seq), od_time = max(od_seq))
 survival_data = survival_data %>% mutate(status = if_else(is.na(od_time), 0, 1))
 survival_data = survival_data %>% mutate(time = if_else(is.na(od_time), time_yearmonth, od_time))
 survival_data = survival_data %>% select(PERSON_ID, status, time)
 survival_data = merge(survival_data, dem, key="PERSON_ID")
 survival_data = merge(survival_data, age_df %>% select(PERSON_ID, age), key="PERSON_ID")
 
-#plot 1
+#plot 1 (overall)
 km = Surv(survival_data$time, survival_data$status) %>%
   (function(x) survfit(x ~ 1, data=survival_data))(.)
 # Kaplan-Meier curve
-plot(km, xlab= "Months",ylab="P(survive)", mark.time=T)
+plot(km, xlab= "Months In System",ylab="P(survive)", mark.time=T)
 km
 
 #plot 2 (by gender)
@@ -350,17 +346,16 @@ plot(km_gender,
      col=c(1:3), mark.time = T); legend("bottomleft", c("Female","Male", "No Data & Other"), col=1:3, lty=c(1,1))
 km_gender
 
-#analysis by age
-km_age = survfit(Surv(survival_data$time, survival_data$status) ~ age<45, data=survival_data)
-km_age
-
-#didn't make sense to plot this.. so just showing output
-km_race = survfit(Surv(survival_data$time, survival_data$status) ~ race, data=survival_data)
+#plot 3 (by race but only subsetting to white and black/african-american)
+survival_data_subset = survival_data %>% filter(race==c("White", "Black/African-American"))
+km_race = survfit(Surv(survival_data_subset$time, survival_data_subset$status) ~ race, data=survival_data_subset)
+plot(km_race,
+     col=c(1:2), mark.time = T); legend("bottomleft", c("Black/African-American","White"), col=1:2, lty=c(1,1))
 km_race
 
 ```
 
-```{r 2009 cohort cox}
+```{r everybody}
 
 ### Cox model
 cm = Surv(survival_data$time, survival_data$status) %>%
@@ -392,78 +387,72 @@ coef(lm, s=cvlm$lambda.1se)
 
 ```
 
-```{r All Cohorts Combined}
-#everyone, irrespective of when they joined
+```{r 2009 cohort only}
 
-prog_survival = prog
-paste("There are", length(unique(prog$PERSON_ID)), "individuals in the dataset")
+#most overdoses occur in the 2009 cohort, so makes sense to examine this one
 
-prog_survival$year_month <- (as.integer(prog_survival$YEAR)%%2009)*12+as.integer(prog_survival$MONTH)
+prog_cohort2009 = prog %>% filter(start_year==2009)
 
-prog_survival$od_year_month <- (as.integer(prog_survival$OVERDOSE_YEAR)%%2009)*12+as.integer(prog_survival$OVERDOSE_MONTH)
+paste("There are", length(unique(prog_cohort2009$PERSON_ID)), "individuals in the 2009 Cohort")
 
-prog_survival = prog_survival %>% group_by(PERSON_ID) %>% mutate(min_yearmonth=min(year_month))
+survival_data_cohort = prog_cohort2009 %>% group_by(PERSON_ID) %>% summarise(time_yearmonth = max(month_seq), od_time = max(od_seq))
+survival_data_cohort = survival_data_cohort %>% mutate(status = if_else(is.na(od_time), 0, 1))
+survival_data_cohort = survival_data_cohort %>% mutate(time = if_else(is.na(od_time), time_yearmonth, od_time))
+survival_data_cohort = survival_data_cohort %>% select(PERSON_ID, status, time)
+survival_data_cohort = merge(survival_data_cohort, dem, key="PERSON_ID")
+survival_data_cohort = merge(survival_data_cohort, age_df %>% select(PERSON_ID, age), key="PERSON_ID")
 
-survival_data_all = prog_survival %>% group_by(PERSON_ID) %>% summarise(time_yearmonth = max(year_month), 
-                                                      od_time = max(od_year_month))
-survival_data_all = survival_data_all %>% mutate(status = if_else(is.na(od_time), 0, 1))
-survival_data_all = survival_data_all %>% mutate(time = if_else(is.na(od_time), time_yearmonth, od_time))
-survival_data_all = survival_data_all %>% select(PERSON_ID, status, time)
-survival_data_all = merge(survival_data_all, dem, key="PERSON_ID")
-survival_data_all = merge(survival_data_all, age_df %>% select(PERSON_ID, age), key="PERSON_ID")
-
-#plot 1
-km_all = Surv(survival_data_all$time, survival_data_all$status) %>%
-  (function(x) survfit(x ~ 1, data=survival_data_all))(.)
+#plot 1 (overall)
+km_cohort = Surv(survival_data_cohort$time, survival_data_cohort$status) %>%
+  (function(x) survfit(x ~ 1, data=survival_data_cohort))(.)
 # Kaplan-Meier curve
-plot(km_all, xlab= "Months",ylab="P(survive)", mark.time=T)
-km_all
+plot(km_cohort, xlab= "Months In System",ylab="P(survive)", mark.time=T)
+km_cohort
 
 #plot 2 (by gender)
-km_all_gender = survfit(Surv(survival_data_all$time, survival_data_all$status) ~ gender, data=survival_data_all)
-plot(km_all_gender,
+km_gender_cohort = survfit(Surv(survival_data_cohort$time, survival_data_cohort$status) ~ gender, data=survival_data_cohort)
+plot(km_gender_cohort,
      col=c(1:3), mark.time = T); legend("bottomleft", c("Female","Male", "No Data & Other"), col=1:3, lty=c(1,1))
-km_all_gender
+km_gender_cohort
 
-#analysis by age
-km_all_age = survfit(Surv(survival_data_all$time, survival_data_all$status) ~ age<45, data=survival_data_all)
-km_all_age
-
-#didn't make sense to plot this.. so just showing output
-km_all_race = survfit(Surv(survival_data_all$time, survival_data_all$status) ~ race, data=survival_data_all)
-km_all_race
+#plot 3 (by race but only subsetting to white and black/african-american)
+survival_data_subset_cohort = survival_data_cohort %>% filter(race==c("White", "Black/African-American"))
+km_race_cohort = survfit(Surv(survival_data_subset_cohort$time, survival_data_subset_cohort$status) ~ race,
+                         data=survival_data_subset_cohort)
+plot(km_race_cohort,
+     col=c(1:2), mark.time = T); legend("bottomleft", c("Black/African-American","White"), col=1:2, lty=c(1,1))
+km_race_cohort
 
 ```
 
-```{r All cohorts combined cox}
+```{r cox for 2009}
 
-### Cox model
-cm_all = Surv(survival_data_all$time, survival_data_all$status) %>%
-  (function(x) coxph(x ~ age + gender, data=survival_data_all))(.)
-cm_all
+cm_cohort = Surv(survival_data_cohort$time, survival_data_cohort$status) %>%
+  (function(x) coxph(x ~ age + gender, data=survival_data_cohort))(.)
+cm_cohort
 
-#for all cohorts, being male increases hazard (coefficient)
-#for all cohorts, men have 96% greater hazard compared to women??
+#for 2009 cohort, being male increases hazard (coefficient)
+#for 2009 cohort, men have 77% greater hazard compared to women??
 #this is a statistically significant difference
 
 #controlling for gender, age increases hazard (coefficient)
-#1 year increase in age increases hazard by 2.4% controlling for gender??
+#1 year increase in age increases hazard by 2.6% controlling for gender??
 #this is statistically significant and makes sense
 
 ### Regularized Cox model
-cox_data_all = survival_data_all %>% select(-time, -status, -PERSON_ID) %>% as.data.frame() %>% as.matrix()
-cox_data_all = cox_data_all %>% dummy_cols(c("gender", "race"))
-cox_data_all = cox_data_all %>% select(-gender, -race) %>% as.data.frame() %>% as.matrix()
+cox_data_cohort = survival_data_cohort %>% select(-time, -status, -PERSON_ID) %>% as.data.frame() %>% as.matrix()
+cox_data_cohort = cox_data_cohort %>% dummy_cols(c("gender", "race"))
+cox_data_cohort = cox_data_cohort %>% select(-gender, -race) %>% as.data.frame() %>% as.matrix()
 
-lm_all = glmnet(cox_data_all, Surv(survival_data_all$time, survival_data_all$status), family="cox")
-plot(lm)
+lm_cohort = glmnet(cox_data_cohort, Surv(survival_data_cohort$time, survival_data_cohort$status), family="cox")
+plot(lm_cohort)
 
 #How to choose s? Consider sparsity you want with cross-validation
-cvlm_all = cv.glmnet(cox_data_all, Surv(survival_data_all$time, survival_data_all$status), family="cox")
-plot(cvlm_all)
+cvlm_cohort = cv.glmnet(cox_data_cohort, Surv(survival_data_cohort$time, survival_data_cohort$status), family="cox")
+plot(cvlm_cohort)
 
-coef(lm_all, s=cvlm_all$lambda.min)
-coef(lm_all, s=cvlm_all$lambda.1se)
+coef(lm_cohort, s=cvlm$lambda.min)
+coef(lm_cohort, s=cvlm$lambda.1se)
 
 
 ```

@@ -16,7 +16,9 @@ loadlibs = function(libs) {
 }
 libs = c("tidyr","magrittr","purrr","dplyr","stringr","readr","data.table", "mice", 
          "randomForest", "ada", "gbm", "caret", "e1071", "ROCR", "ggplot2", "glmnet", "readxl",
-         "survival", "fastDummies")
+         "survival", "fastDummies", "DataExplorer", "ggplot2", "corrplot")
+
+library(data.table)
 loadlibs(libs)
 
 mode_fun <- function(x) {
@@ -26,6 +28,7 @@ mode_fun <- function(x) {
 
 #--- setting global decimal print setting
 options(scipen=4)
+source("http://pcwww.liv.ac.uk/~william/R/crosstab.r")
 
 prog = fread("program_activity.csv") %>% as_tibble() 
 dem = fread("demographic.csv") %>% as_tibble() 

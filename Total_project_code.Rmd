@@ -2,7 +2,9 @@
 title: "ML Pipeline Project Code"
 author: "Lauren Rost, Mridul Singh Gangawar, Nikita Setia"
 date: "March 19, 2019"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r, message=FALSE, warning=FALSE}
@@ -41,13 +43,14 @@ presc = fread("opiate_prescription_fills.csv") %>% as_tibble()
 
 summary(dem %>% mutate_if(is.character, as.factor))
 
-# missing data for RACE and GENDER
-# merging native hawaiian/pacific islander + no data = no data and other because the former is too small
-# merging transgendered male to female and no data = no data and other because former is too small
-# dealing with missingness by allowing it to be its own category - because most likely MNAR
 ```
 
 # Race and Gender Data Cleaning
+#### missing data for RACE and GENDER
+#### merging native hawaiian/pacific islander + no data = no data and other because the former is too small
+#### merging transgendered male to female and no data = no data and other because former is too small
+#### dealing with missingness by allowing it to be its own category - because most likely MNAR
+
 ```{r}
 
 dem$RACE[which(grepl("No Data", dem$RACE))] = "No Data and Other"
@@ -65,8 +68,7 @@ summary(dem %>% mutate_if(is.character, as.factor))
 summary(prog)
 
 # No missing values in the program data 
-# Overdose date and opiate overdose has NAs for individuals who have not overdosed, 
-# so that is meaningful and not actually missing
+# Overdose date and opiate overdose has NAs for individuals who have not overdosed, so that is meaningful and not actually missing
 
 ```
 
@@ -110,6 +112,7 @@ summary(presc %>% mutate_if(is.character, as.factor))
 
 ```
 
+# Data Cleaning: Age
 ```{r}
 
 age_df = presc %>% group_by(PERSON_ID) %>% summarise(min_age = min(AGE), max_age = max(AGE), mean_age = round(mean(AGE)))
@@ -124,6 +127,7 @@ age_df$age[which(is.na(age_df$age_clean))] = median(age_df$age_clean, na.rm=TRUE
 summary(age_df)
 ```
 
+# Data Cleaning: Drug Information 
 ```{r}
 
 presc$drug_strength <- str_extract(presc$LABEL_NAME, "[0-9].*")
@@ -152,6 +156,7 @@ presc = presc %>% mutate(opioid_converted = as.numeric(opioid)/as.numeric(diviso
 
 ```
 
+# Data Cleaning: Drug Information, Continued
 ```{r}
 
 presc <- presc %>% 
@@ -182,6 +187,7 @@ presc <- presc %>%
 
 ```
 
+# Data Cleaning: Drug Information, Continued
 
 ```{r}
 
@@ -220,7 +226,7 @@ presc <- presc %>%
     )))))))))))))
 ```
 
-## Data Cleaning: Fixing Days Supply
+## Data Cleaning: Days Supply
 ```{r}
 
 loop_values = presc %>% group_by(generic_name, dosage_form) %>% summarise(count = n())
@@ -309,16 +315,11 @@ summary(final_data %>% mutate_if(is.character, as.factor))
 
 ```
 
-```{r}
-write.csv(final_data, "final_data.csv", row.names = FALSE)
 
-```
 ## ** End Data Cleaning **
 
 # Machine Learning Analysis
 ```{r}
-final_data <- read.csv("final_data.csv") 
-dat <- fread("final_data.csv") %>% as_tibble()
 
 table(final_data$od_type)
 
@@ -337,7 +338,7 @@ crosstab(final_data, row.vars = "most_dose_form",col.vars = "od_type", type = "f
 rm(final_data_df)
 ```
 
-### Some drugs and dosage form counts are much less so there is no need to keep them as a separate category. Here we create a separate category for "Other" in which we combine all such categories.
+### Some drugs and dosage form counts have very few counts so there is no need to keep them as a separate category. Here we create a separate category for "Other" in which we combine all such categories.
 
 ```{r}
 final_data <- group_category(data = final_data, feature = "most_presc_drug", threshold = 0.002, update = TRUE) %>%
@@ -356,9 +357,9 @@ corrplot(res, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
 ```
 
 ```{r}
-c1 <- ggplot(final_data, aes(avg_mme)) +geom_histogram(fill="#336B87",breaks=c(seq(100,6000, by=150)))
-c2 <- ggplot(final_data, aes(median_mme)) +geom_histogram(fill="#336B87",breaks=c(seq(100,6000, by=150)))
-c3 <- ggplot(final_data, aes(mode_mme)) + geom_histogram(fill="#336B87",breaks=c(seq(100,6000, by=150)))
+c1 <- ggplot(final_data, aes(avg_mme)) + labs(x="Average Morphine Milligram Equivalents (MME)", y="Count") + geom_histogram(fill="#336B87",breaks=c(seq(100,6000, by=150)))
+c2 <- ggplot(final_data, aes(median_mme)) + labs(x="Median MME", y="Count") + geom_histogram(fill="#336B87",breaks=c(seq(100,6000, by=150)))
+c3 <- ggplot(final_data, aes(mode_mme)) + labs(x="Mode MME", y="Count") + geom_histogram(fill="#336B87",breaks=c(seq(100,6000, by=150)))
 ggarrange(c1,c2,c3,nrow=3,ncol=1)
 rm(list=c('c1','c2','c3'))
 ```

@@ -621,11 +621,6 @@ legend("bottomright",legend=c("Logistic regression (LR)","Ridge LR","Random Fore
 
 ```
 
-```{r}
-
-```
-
-
 
 # Survival Analysis
 

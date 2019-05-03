@@ -21,7 +21,7 @@ loadlibs = function(libs) {
 libs = c("tidyr","magrittr","purrr","dplyr","stringr","readr","data.table", "mice", 
          "randomForest", "ada", "gbm", "caret", "e1071", "ROCR", "ggplot2", "readxl",
          "survival", "fastDummies", "DataExplorer", "ggplot2", "corrplot", "ggpubr", 
-         "parallel", "doParallel","DMwR", "glmnet", "pROC", "keras"))
+         "parallel", "doParallel","DMwR", "glmnet", "pROC", "keras")
 
 loadlibs(libs)
 
@@ -380,6 +380,8 @@ corrplot(res, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
 ```
 
 ```{r, message=FALSE, warning=FALSE}
+#checking distribution of median_mme, mode_mme, average_mme
+
 c1 <- ggplot(final_data, aes(avg_mme)) + labs(x="Average Morphine Milligram Equivalents (MME)", y="Count") + geom_histogram(fill="#336B87",breaks=c(seq(100,6000, by=150))) + ggtitle("Average MME Frequency Distribution")
 
 c2 <- ggplot(final_data, aes(median_mme)) + labs(x="Median MME", y="Count") + 
@@ -401,8 +403,10 @@ final_data$target[final_data$od_type=='No Overdose'] <- 0
 final_data$target[final_data$od_type=='Non-Opiate Overdose'] <- 0
 final_data$target[final_data$od_type=='Opiate Overdose'] <- 1
 
+#removing columns which are not fit for prediction purpose
 final_data <- final_data %>% select(-c('avg_mme','mode_mme','od_date','od_year','od_type','od_month','PERSON_ID'))
 
+#transforming data using log transformation
 trans <- function(x){
   return (log(1+x))
 }
@@ -421,6 +425,7 @@ final_df$target <- final_data$target
 ## Multivariate Logistic Regression
 ```{r, message=FALSE, warning=FALSE}
 
+#splitting train and testing set (50% ratio)
 smp_size <- floor(0.5 * nrow(final_df))
 set.seed(1)
 train_indices <- sample(seq_len(nrow(final_df)),size=smp_size)
@@ -438,8 +443,6 @@ predict_logistic <- predict(model_logistic, xtest, type = 'response')
 
 ## Create Confusion Matrix
 table(xtest$target, predict_logistic > 0.4)
-
-
 ```
 
 Due to the fact that we were not able to capture a single opioid overdose case with logistic regression, we attempt to identify opioid overdose cases using SMOTE (Synthetic Minority Oversampling Technique).
@@ -449,7 +452,7 @@ Due to the fact that we were not able to capture a single opioid overdose case w
 ```{r, message=FALSE, warning=FALSE}
 options(scipen=999)
 
-#Logistic Regression with Oversampling
+#performing Oversampling to generate synthetic data
 
 set.seed(1)
 balanced.data <- SMOTE(target ~., xtrain, perc.over = 500, k = 5, perc.under = 500)
@@ -458,6 +461,8 @@ as.data.frame(table(balanced.data$target))
 cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
 
+
+#instead of training models on all the columns, we are identifying important columns using random forest 
 fitControl <- trainControl(method = "cv", number = 5, allowParallel = TRUE)
 
 fit <- train(target ~ ., method="rf",data=balanced.data,trControl = fitControl)
@@ -471,6 +476,8 @@ plot(var.imp,top=15)
 
 ```{r, message=FALSE, warning=FALSE}
 
+#selecting columns which turns out to be important in random forest
+
 cols_to_select = c("tram_count","total_da","race_White","total_cr_drug_cases","median_mme","total_cr_cases",
                    "race_Black.African.American","avg_dispensed","most_presc_drug_OXYMORPHONE.HCL","gender_Male","gender_Female",
                    "avg_supply","age","total_mh","total_acj","pill_count",
@@ -480,8 +487,9 @@ xtrain <- xtrain[,c(cols_to_select)]
 xtest <- xtest[,c(cols_to_select)]
 balanced.data <- balanced.data[,c(cols_to_select)]
 
+#fitting our first model - logistic regression 
 
-fitControl <- trainControl(method = "repeatedcv",number = 5,repeats = 3)
+fitControl <- trainControl(method = "repeatedcv",number = 5,repeats = 5)
 
 model_logistic_cv <- train(target ~ ., data = balanced.data, method = "glm",family = binomial(link = "logit"),
                           trControl = fitControl)
@@ -492,8 +500,6 @@ pred_logistic_cv <- predict(model_logistic_cv$finalModel,xtest,type = 'response'
 
 #test with confusion matrix
 table(pred_logistic_cv>0.4,xtest$target)
-
-#quantile(pred_balanced_logistic_cv, probs = seq(0, 1, by= 0.1))
 ```
 
 ## Ridge Regression (using Cross-Validation)
@@ -518,7 +524,7 @@ table(pred_ridge>0.2,xtest$target)
 
 ```{r, message=FALSE, warning=FALSE}
 
-fitControl <- trainControl(method = "cv", number = 5, allowParallel = TRUE)
+fitControl <- trainControl(method = "cv", number = 10, allowParallel = TRUE)
 
 model_rf <- train(target ~ ., method="rf",data=balanced.data,trControl = fitControl)
 
@@ -532,7 +538,7 @@ table(pred_rf>0.3,xtest$target)
 ```{r, message=FALSE, warning=FALSE}
 
 set.seed(123)
-fitControl = trainControl(method="cv", number=5, returnResamp = "all",allowParallel = TRUE)
+fitControl = trainControl(method="cv", number=10, returnResamp = "all",allowParallel = TRUE)
 
 model_gbm = train(target~., data=balanced.data, method="gbm",distribution="bernoulli", trControl=fitControl, verbose=F, tuneGrid=data.frame(.n.trees=5000, .shrinkage=0.1, .interaction.depth=1, .n.minobsinnode=1))
 
@@ -570,6 +576,7 @@ y_test <- as.numeric(xtest$target) %>% as.matrix()
 x_train <- balanced.data2 %>% select(-c(target)) %>% as.matrix()
 x_test <- xtest %>% select(-c(target)) %>% as.matrix()
 
+#defining a neural net model
 model_nn <- keras_model_sequential() 
 model_nn <- model_nn %>% 
   layer_dense(units = 256, activation = 'tanh', input_shape = c(20)) %>% 
@@ -588,7 +595,7 @@ model_nn %>% compile(
 
 history <- model_nn %>% fit(
   x_train, y_train, 
-  epochs = 50, batch_size = 128, 
+  epochs = 30, batch_size = 128, 
   validation_split = 0.2
 )
 
@@ -599,19 +606,25 @@ table(pred_model_nn,xtest$target)
 
 ## Evaluation of Machine Learning Methods
 ```{r, message=FALSE, warning=FALSE}
+#overlapping all the ROC curve
 
-roc(xtest$target,pred_logistic_cv,plot=TRUE,legacy.axes=TRUE, col="#377eb8",print.auc=TRUE,percent = TRUE,print.auc.y=60,
+roc(xtest$target,pred_logistic_cv,plot=TRUE,legacy.axes=TRUE, col="#377eb8",
     xlab="False Positive Rate",ylab="True Positive Rate")
-plot.roc(xtest$target,pred_ridge, col="#4daf4a",print.auc=TRUE,add=TRUE,percent=TRUE, print.auc.y=50)
-plot.roc(xtest$target,pred_rf, col="#FF420E",print.auc=TRUE,add=TRUE,percent=TRUE,print.auc.y=40)
-plot.roc(xtest$target,pred_gbm$'1', col="#FFBB00",print.auc=TRUE,add=TRUE,percent=TRUE,print.auc.y=30)
-plot.roc(xtest$target,pred_ada[,2], col="#763626",print.auc=TRUE,add=TRUE,percent=TRUE,print.auc.y=20)
-plot.roc(xtest$target,pred_model_nn, col="#375E97",print.auc=TRUE,add=TRUE,percent=TRUE,print.auc.y=10)
+plot.roc(xtest$target,pred_ridge, col="#4daf4a",add=TRUE)
+plot.roc(xtest$target,pred_rf, col="#FF420E",add=TRUE)
+plot.roc(xtest$target,pred_gbm$'1', col="#FFBB00",add=TRUE)
+plot.roc(xtest$target,pred_ada[,2], col="#763626",add=TRUE)
+plot.roc(xtest$target,pred_model_nn, col="#375E97",add=TRUE)
 
 legend("bottomright",legend=c("Logistic regression (LR)","Ridge LR","Random Forest","Gradient Boosting","AdaBoost","Neural Network"),
             col=c("#377eb8","#4daf4a","#FF420E","#FFBB00","#763626","#375E97"),lwd=4, bg=F)
 
 ```
+
+```{r}
+
+```
+
 
 
 # Survival Analysis

@@ -400,7 +400,7 @@ median_mme looks normal and less skewed. We will be using median_mme for predict
 
 final_data$target <- NULL
 final_data$target[final_data$od_type=='No Overdose'] <- 0
-final_data$target[final_data$od_type=='Non-Opiate Overdose'] <- 0
+final_data$target[final_data$od_type=='Non-Opiate Overdose'] <- 1
 final_data$target[final_data$od_type=='Opiate Overdose'] <- 1
 
 #removing columns which are not fit for prediction purpose
@@ -480,7 +480,7 @@ plot(var.imp,top=15)
 
 cols_to_select = c("tram_count","total_da","race_White","total_cr_drug_cases","median_mme","total_cr_cases",
                    "race_Black.African.American","avg_dispensed","most_presc_drug_OXYMORPHONE.HCL","gender_Male","gender_Female",
-                   "avg_supply","age","total_mh","total_acj","pill_count",
+                   "avg_supply","age","total_mh","total_acj","pill_count","most_presc_drug_TRAMADOL",
                    "num_presc","hydrobit_count","oxy_count","most_presc_drug_HYDROCODONE.BITARTRATE","target")
 
 xtrain <- xtrain[,c(cols_to_select)]
@@ -567,7 +567,7 @@ table(pred_ada[,2]>0.2,xtest$target)
 
 # Neural net
 
-balanced.data2 <- SMOTE(target ~., xtrain, perc.over = 4800, k = 5, perc.under = 2400)
+balanced.data2 <- SMOTE(target ~., xtrain, perc.over = 1000, k = 5, perc.under = 500)
 
 
 y_train <- as.numeric(balanced.data2$target) %>% as.matrix()
@@ -579,7 +579,7 @@ x_test <- xtest %>% select(-c(target)) %>% as.matrix()
 #defining a neural net model
 model_nn <- keras_model_sequential() 
 model_nn <- model_nn %>% 
-  layer_dense(units = 256, activation = 'tanh', input_shape = c(20)) %>% 
+  layer_dense(units = 256, activation = 'tanh', input_shape = c(21)) %>% 
   layer_dropout(rate = 0.4) %>% 
   layer_dense( units= 256, kernel_initializer = "uniform", activation = "tanh") %>%
   layer_dropout(0.1) %>%

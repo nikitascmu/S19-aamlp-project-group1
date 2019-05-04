@@ -3,8 +3,8 @@ title: "ML Pipeline Project Code"
 author: "Lauren Rost, Mridul Singh Gangawar, Nikita Setia"
 date: "March 19, 2019"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 # Loading Necessary Files and Packages

@@ -442,7 +442,7 @@ model_logistic <- glm (target~., data=xtrain, family = binomial,control = list(m
 predict_logistic <- predict(model_logistic, xtest, type = 'response')
 
 ## Create Confusion Matrix
-table(xtest$target, predict_logistic > 0.4)
+table(xtest$target, predict_logistic > 0.25)
 ```
 
 Due to the fact that we were not able to capture a single opioid overdose case with logistic regression, we attempt to identify opioid overdose cases using SMOTE (Synthetic Minority Oversampling Technique).
@@ -499,7 +499,7 @@ model_logistic_cv <- train(target ~ ., data = balanced.data, method = "glm",fami
 pred_logistic_cv <- predict(model_logistic_cv$finalModel,xtest,type = 'response')
 
 #test with confusion matrix
-table(pred_logistic_cv>0.4,xtest$target)
+table(pred_logistic_cv>0.25,xtest$target)
 ```
 
 ## Ridge Regression (using Cross-Validation)
@@ -517,7 +517,7 @@ model_ridge <- glmnet(x, y, alpha = 1, family = "binomial",lambda = cv.lasso$lam
 x.test <- xtest %>% select(-c(target)) %>% as.matrix()
 pred_ridge <- model_ridge %>% predict(newx = x.test)
 
-table(pred_ridge>0.2,xtest$target)
+table(pred_ridge>0.25,xtest$target)
 ```
 
 ## Random forest (using Cross-Validation)
@@ -529,7 +529,7 @@ fitControl <- trainControl(method = "cv", number = 10, allowParallel = TRUE)
 model_rf <- train(target ~ ., method="rf",data=balanced.data,trControl = fitControl)
 
 pred_rf <- predict(model_logistic_cv$finalModel,xtest,type = 'response')
-table(pred_rf>0.3,xtest$target)
+table(pred_rf>0.25,xtest$target)
 
 ```
 
@@ -544,7 +544,7 @@ model_gbm = train(target~., data=balanced.data, method="gbm",distribution="berno
 
 pred_gbm <- predict(model_gbm,xtest,type = 'prob')
 
-table(pred_gbm$'1'>0.2,xtest$target)
+table(pred_gbm$'1'>0.25,xtest$target)
 
 stopCluster(cluster)
 registerDoSEQ()
@@ -559,7 +559,7 @@ model_ada = ada(formula = target ~ .,data=balanced.data ,iter=10)
 
 pred_ada <- predict(model_ada,xtest,type = 'prob')
 
-table(pred_ada[,2]>0.2,xtest$target)
+table(pred_ada[,2]>0.25,xtest$target)
 ```
 
 ## Neural Network 
@@ -707,6 +707,4 @@ coef(lm, s=cvlm$lambda.min)
 coef(lm, s=cvlm$lambda.1se)
 
 ```
-
-Need to see if/how this changes if everyone has the same starting point. So, decided to do the survival analysis for a specific cohort i.e. same starting point. We chose cohort==2009 because it has the most amount of data available longitudinally.
 

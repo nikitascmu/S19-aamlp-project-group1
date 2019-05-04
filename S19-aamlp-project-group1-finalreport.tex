@@ -13,7 +13,7 @@
 
 \begin{document}
 
-\title{Heinz 95-845: Project Proposal}
+\title{Heinz 95-845: Project Report}
 
 \author{\name Mridul Gangwar \email mgangwar@andrew.cmu.edu \\
        \addr Heinz College of Information Systems and Public Policy\\
@@ -30,30 +30,75 @@
 \maketitle
 %\begin{multicols}{2}
 %\section{Project Details} \label{details}
-\vspace*{5px}
+
+\begin{abstract}
+  The abstract is the summary of the article. Your potential readers will glance at the abstract to decide
+  if the article is worth reading. Make it good--this is your most-read text!  
+\end{abstract}
+
+%\vspace*{5px}
 \section{Introduction}
-Opioid abuse has been an emerging public health issue, and was declared a Public Health Emergency in 2017\footnote{\cite{HHS}}. The Centers for Disease Control and Prevention (CDC) estimates that an average of 130 people die in the U.S. every day from opioid overdose\footnote{\cite{Wonder}}. Many nationally-funded public health institutions like the CDC and NIH, have established goals, public health initiatives, and funding schemas to combat this epidemic\footnote{\cite{CADCA}}\footnote{\cite{CDC_OO}}\footnote{\cite{NationalInstitute}}. Research has been dedicated towards addressing this major public health issue as well, however opioid abuse and overdose remains a point of public health interest.   
+Opioid abuse has been an emerging public health issue, and was declared a Public Health Emergency in 2017\footnote{\cite{HHS}}. The Centers for Disease Control and Prevention (CDC) estimates that 130 people on average die in the U.S. every day from opioid overdose\footnote{\cite{Wonder}}. Many nationally-funded public health institutions, like the CDC and NIH, have established goals, public health initiatives, and funding schemes to combat this epidemic\footnote{\cite{CADCA}}\footnote{\cite{CDC_OO}}\footnote{\cite{NationalInstitute}}. Research has been dedicated towards addressing this major public health issue as well. However, opioid abuse and overdose remains a point of public health interest.   
+
+\section{Background}
+
 
 \section{Methods}
-\subsection{Pre-processing and Data Cleaning}
+\subsection{Original Data Description}
+
+\subsection{Data Extraction}
+
+\subsection{Feature Choices}
+In a few columns, we had categories with a few values (less than 0.2\%). For the prediction task, we decided to combine such groups to create a separate “Other” category.We also performed a correlation analysis to better understand the relationship between numerical variables. During the exploration we found out some interesting relationship like hydrobit count is positively correlated with total Rx, number of prescriptions, and pill count.
+
+During our data cleaning phase, we had created three variables related to morphine milligram equivalent (MME), i.e., average MME, median MME, and mode MME.  When we plotted the distribution of all these variables, we found out median MME to be less skewed and approximately normally distributed. We decided to keep only median MME our prediction purpose and remove the other two to avoid multicollinearity.
+
+As the last step, we set up our prediction as Opiate Overdose vs. No Overdose (includes non-Opiate Overdose). We removed columns which are derived from overdose date to avoid leakage in our machine learning models, as overdose date is proxy for our target column.
+
+
 \subsection{Cohort}
 *Table 1
 Inclusion and Exclusion criteria 
-Imputation methods
-Machine learning methods (MLR, regularized MLR, random forest, boosting, gradient boosting, k-means clustering)
+
+
+\subsection{Comparison Methods}
+Machine learning methods (MLR, regularized MLR, random forest, boosting, gradient boosting, k-means clustering, survival analysis)
 Cross-validation
 
+\subsection{Evaluation Criteria}
+Can talk about oversampling here, maybe?
+Also, need to explain AUROC, accuracy and other criteria we used to evaluate.
 
 \section{Results}
+
+\subsection{Results on MLR and regularized MLR}
 AUROC, Figures 
 
-\section{Discussion}
+\subsection{Results on Random Forest}
+AUROC, Figures 
+
+\subsection{Results on Boosting}
+AUROC, Figures 
+
+\subsection{Results on Gradient Boosting}
+AUROC, Figures 
+
+\subsection{Results on k-means Clustering}
+AUROC, Figures 
+
+\subsection{Results on Survival Analysis}
+AUROC, Figures 
+
+
+\section{Discussion and Related Work}
 Significance of results
 Limitations 
+
+\section{Conclusion}
 
 \newpage
 \theendnotes
 \bibliographystyle{ieeetr}
-\bibliography{proposal_bibliography.bib}
+\bibliography{final_bibliography.bib}
 
 \end{document} 

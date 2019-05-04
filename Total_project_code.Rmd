@@ -21,7 +21,7 @@ loadlibs = function(libs) {
 libs = c("tidyr","magrittr","purrr","dplyr","stringr","readr","data.table", "mice", 
          "randomForest", "ada", "gbm", "caret", "e1071", "ROCR", "ggplot2", "readxl",
          "survival", "fastDummies", "DataExplorer", "ggplot2", "corrplot", "ggpubr", 
-         "parallel", "doParallel","DMwR", "glmnet", "pROC", "keras")
+         "parallel", "doParallel","DMwR", "glmnet", "pROC", "keras", "tibble")
 
 loadlibs(libs)
 
@@ -616,8 +616,14 @@ plot.roc(xtest$target,pred_gbm$'1', col="#FFBB00",add=TRUE)
 plot.roc(xtest$target,pred_ada[,2], col="#763626",add=TRUE)
 plot.roc(xtest$target,pred_model_nn, col="#375E97",add=TRUE)
 
-legend("bottomright",legend=c("Logistic regression (LR)","Ridge LR","Random Forest","Gradient Boosting","AdaBoost","Neural Network"),
-            col=c("#377eb8","#4daf4a","#FF420E","#FFBB00","#763626","#375E97"),lwd=4, bg=F)
+legend("bottomright",legend=c(
+  paste("Logistic regression (LR), AUC = ", format(roc(xtest$target,pred_logistic_cv)$auc,digits=2)), 
+  paste("Ridge LR, AUC = ", format(roc(xtest$target,pred_ridge)$auc, digits=2)),
+  paste("Random Forest, AUC = ", format(roc(xtest$target,pred_rf)$auc, digits=2)),
+  paste("Gradient Boosting, AUC = ", format(roc(xtest$target,pred_gbm$'1')$auc, digits=2)),
+  paste("AdaBoost, AUC = ", format(roc(xtest$target,pred_ada[,2])$auc, digits=2)),
+  paste("Neural Network, AUC = ", format(roc(xtest$target,pred_model_nn)$auc, digits=2 ))),
+            col=c("#377eb8","#4daf4a","#FF420E","#FFBB00","#763626","#375E97"),lwd=4, bg=F, cex=0.75, bty="n")
 
 ```
 

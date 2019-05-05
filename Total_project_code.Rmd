@@ -264,8 +264,8 @@ for (i in 1:length(generics)){
   min_supply_vec[i]=round(quantile(presc_subset$DAYS_SUPPLY , probs=seq(0, 1, by=0.005))[[2]])
   max_supply_vec[i]=round(quantile(presc_subset$DAYS_SUPPLY, probs=seq(0, 1, by=0.005))[[200]])
   
-  min_dispensed_vec[i]=round(quantile(presc_subset$DISPENSED_QTY , probs=seq(0, 1, by=0.005))[[5]])
-  max_dispensed_vec[i]=round(quantile(presc_subset$DISPENSED_QTY, probs=seq(0, 1, by=0.005))[[195]])
+  min_dispensed_vec[i]=round(quantile(presc_subset$DISPENSED_QTY , probs=seq(0, 1, by=0.005))[[2]])
+  max_dispensed_vec[i]=round(quantile(presc_subset$DISPENSED_QTY, probs=seq(0, 1, by=0.005))[[200]])
 }
 
 min_supply_vec = min_supply_vec %>% as.data.frame()

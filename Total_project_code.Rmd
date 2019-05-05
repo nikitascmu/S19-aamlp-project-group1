@@ -3,8 +3,8 @@ title: "ML Pipeline Project Code"
 author: "Lauren Rost, Mridul Singh Gangawar, Nikita Setia"
 date: "March 19, 2019"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 # Loading Necessary Files and Packages
@@ -494,12 +494,12 @@ fitControl <- trainControl(method = "repeatedcv",number = 5,repeats = 5)
 model_logistic_cv <- train(target ~ ., data = balanced.data, method = "glm",family = binomial(link = "logit"),
                           trControl = fitControl)
 
-
 #predicted values for testdata:
 pred_logistic_cv <- predict(model_logistic_cv$finalModel,xtest,type = 'response')
 
 #test with confusion matrix
 table(pred_logistic_cv>0.25,xtest$target)
+summary(model_logistic_cv)
 ```
 
 ## Ridge Regression (using Cross-Validation)

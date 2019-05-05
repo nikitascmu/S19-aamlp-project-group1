@@ -939,7 +939,6 @@ fitControl &lt;- trainControl(method = &quot;repeatedcv&quot;,number = 5,repeats
 model_logistic_cv &lt;- train(target ~ ., data = balanced.data, method = &quot;glm&quot;,family = binomial(link = &quot;logit&quot;),
                           trControl = fitControl)
 
-
 #predicted values for testdata:
 pred_logistic_cv &lt;- predict(model_logistic_cv$finalModel,xtest,type = 'response')
 
@@ -949,6 +948,72 @@ table(pred_logistic_cv&gt;0.25,xtest$target)</code></pre>
 ##             0     1
 ##   FALSE 51039   270
 ##   TRUE   8653   363</code></pre>
+<pre class="r"><code>summary(model_logistic_cv)</code></pre>
+<pre><code>## 
+## Call:
+## NULL
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -3.5741  -0.4381  -0.2131  -0.0816   3.2691  
+## 
+## Coefficients:
+##                                        Estimate Std. Error z value
+## (Intercept)                            -5.51284    0.69847  -7.893
+## tram_count                              0.46309    0.04304  10.759
+## total_da                                0.41191    0.02405  17.130
+## race_White                              2.91901    0.19693  14.823
+## total_cr_drug_cases                     0.32337    0.08071   4.007
+## median_mme                             -0.26299    0.01700 -15.472
+## total_cr_cases                          0.48210    0.06676   7.221
+## race_Black.African.American             0.67501    0.21373   3.158
+## avg_dispensed                          -0.06745    0.08017  -0.841
+## most_presc_drug_OXYMORPHONE.HCL         6.97661    0.49669  14.046
+## gender_Male                            -1.69871    0.90581  -1.875
+## gender_Female                          -2.44026    0.90590  -2.694
+## avg_supply                              0.51766    0.08365   6.188
+## age                                     0.98330    0.08238  11.936
+## total_mh                                0.03542    0.02090   1.695
+## total_acj                              -0.03987    0.03742  -1.065
+## pill_count                              0.68966    0.25950   2.658
+## most_presc_drug_TRAMADOL               -3.20626    0.19147 -16.745
+## num_presc                              -0.74717    0.25855  -2.890
+## hydrobit_count                          0.33914    0.05323   6.371
+## oxy_count                              -0.03899    0.04402  -0.886
+## most_presc_drug_HYDROCODONE.BITARTRATE -1.21036    0.13339  -9.073
+##                                                    Pr(&gt;|z|)    
+## (Intercept)                             0.00000000000000296 ***
+## tram_count                             &lt; 0.0000000000000002 ***
+## total_da                               &lt; 0.0000000000000002 ***
+## race_White                             &lt; 0.0000000000000002 ***
+## total_cr_drug_cases                     0.00006161994271598 ***
+## median_mme                             &lt; 0.0000000000000002 ***
+## total_cr_cases                          0.00000000000051541 ***
+## race_Black.African.American                         0.00159 ** 
+## avg_dispensed                                       0.40022    
+## most_presc_drug_OXYMORPHONE.HCL        &lt; 0.0000000000000002 ***
+## gender_Male                                         0.06074 .  
+## gender_Female                                       0.00707 ** 
+## avg_supply                              0.00000000060837000 ***
+## age                                    &lt; 0.0000000000000002 ***
+## total_mh                                            0.09015 .  
+## total_acj                                           0.28671    
+## pill_count                                          0.00787 ** 
+## most_presc_drug_TRAMADOL               &lt; 0.0000000000000002 ***
+## num_presc                                           0.00385 ** 
+## hydrobit_count                          0.00000000018734123 ***
+## oxy_count                                           0.37572    
+## most_presc_drug_HYDROCODONE.BITARTRATE &lt; 0.0000000000000002 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 17942  on 18258  degrees of freedom
+## Residual deviance: 10699  on 18237  degrees of freedom
+## AIC: 10743
+## 
+## Number of Fisher Scoring iterations: 7</code></pre>
 </div>
 <div id="ridge-regression-using-cross-validation" class="section level2">
 <h2>Ridge Regression (using Cross-Validation)</h2>

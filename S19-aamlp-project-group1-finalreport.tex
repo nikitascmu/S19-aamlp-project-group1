@@ -153,9 +153,9 @@ These curves, along with their reported AUCs, indicate that Gradient Boosting pe
 Table \ref{tab:metrics} summarizes the performance of all six machine learning models in predicting overdose deaths. Please note that there are 633 overdoses in the test dataset. As seen in this table, despite having the highest AUC, Gradient Boosting correctly identifies only 22\% of overdose deaths (few relative to the other high performing models). Neural nets identifies all overdose deaths simply because it classifies every individual at risk of overdose, so it can be excluded from consideration. Of the remaining four models, Multivariate Logistic Regression and Random Forest perform the best, correctly identifying 57\% of the at-risk individuals. 
 
 \subsection{Understanding the Survival Analysis}
-Survival analysis using the Kaplan-Meier estimation yields a survival curve seen in figure \ref{fig:km_original} in the appendix. The plot shows us that the probability of survival gradually declines from 100\% at the beginning to 96.5\% at the final month in the system (108 month mark). Individuals have dropped out of the system i.e. stopped utilizing DHS services and filling prescriptions at various points throughout the time-frame. The earliest time at which we start to see a decline in survival probability is 8 months.\\
+Survival analysis using the Kaplan-Meier estimation yields a survival curve seen in figure \ref{fig:km_original} in the appendix. The plot shows us that the probability of survival gradually declines from 100\% at the beginning to 96.6\% at the final month in the system (108 month mark). Individuals have dropped out of the system i.e. stopped utilizing DHS services and filling prescriptions at various points throughout the time-frame. The earliest time at which we start to see a decline in survival probability is 8 months.\\
 
-Next, we explored if and how this probability of survival changes among various gender and race subgroups. Figure \ref{fig:km_gender} shows us that females have a higher probability of survival than males in this dataset. Furthermore, individuals who are in the 'no data and other' category have a relatively lower probability of survival. Females have a 97.4\% probability of surviving, males have a 95.3\% probability of surviving, and individuals who have either not reported their gender or are transgender female have a 72.7\% probability of surviving an overdose event by the time they conclude their time in the system. \\
+Next, we explored if and how this probability of survival changes among various gender and race subgroups. Figure \ref{fig:km_gender} shows us that females have a higher probability of survival than males in this dataset. Furthermore, individuals who are in the 'no data and other' category have a relatively lower probability of survival. Females have a 97.5\% probability of surviving, males have a 95.3\% probability of surviving, and individuals who have either not reported their gender or are transgender female have a 72.7\% probability of surviving an overdose event by the time they conclude their time in the system. \\
 
 \begin{figure}[h!]
 \centering
@@ -183,10 +183,10 @@ Table \ref{tab:km_race} below display the survival probabilities at the conclusi
     \begin{tabular}{l|c|c|c|c|c|c}
       \textbf{Race} & \textbf{Probability of Survival (\%)} \\
       \hline
-     American Indian & Not Applicable \\
+     American Indian or Native Alaskan & Not Applicable \\
      Asian & 99.6 \\
      Biracial or Multiracial & 96.6 \\
-     Black or African American & 98.5 \\
+     Black or African American & 98.6 \\
      No Data or Other & 97.4 \\
      White & 95.0 \\
      \hline
@@ -194,11 +194,18 @@ Table \ref{tab:km_race} below display the survival probabilities at the conclusi
   \end{center}
 \end{table}
 
-Next, we use a Cox Proportional Hazards model to analyze the survival probability of individuals by including age, gender and race as predictor variables. Table 
+Next, we use a Cox Proportional Hazards model to analyze the survival probability of individuals by including age, gender and race as predictor variables. Figure \ref{fig:cox_model} below shows the output of the Cox model. This output indicates that age, being male and being in the "no data and other" category for gender are statistically significant predictors of survival. Specifically, holding all other things constant, a one year increase in age is associated with an increase in hazard by a factor of 1.028 or 2.8\%. Being male (compared to being female), holding all else constant, increases hazard by a factor of 1.86 or 86\%. Finally, individuals with no reported gender or other (compared to being female), with everything else held constant, increases hazard by a factor of 7.8 or 680\%. 
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=10cm]{images/cox_model.JPG}
+\caption{Cox Model Output with Age, Race and Gender as Predictors}
+\label{fig:cox_model}
+\end{figure}
 
 \subsection{Variable Importance}
-We found that the most informative variables to overdose was the total number of Tramadol prescribed(tram\_count), the total number of drug and alcohol services received(total\_da), being of white race(race\_White), the total number of lower court drug-related criminal cases(total\_cr\_drug\_cases). 
-These 15 variables from the random forest were statistically significant with a P-value less than 0.05 in the logistic regression as well, except for the average number of dispensed drugs (avg\_dispensed), being of the male gender(gender\_Male), and the total number of mental health service records (total\_mh).
+We found that the most informative variables to overdose was the total number of Tramadol prescribed ($tram\_count$), the total number of drug and alcohol services received ($total\_da$), being of white race ($race\_White$), the total number of lower court drug-related criminal cases ($total\_cr\_drug\_cases$).
+These four variables come out to be significant in logistic regression as well with the p-value close to zero. The 20 variables from the random forest were statistically significant with a P-value less than 0.05 in the logistic regression as well, except for the average number of dispensed drugs ($avg\_dispensed$), being of the male gender($gender\_Male$), and the total number of mental health service records ($total\_mh$).
 
 \begin{figure}[h!]
 \centering
@@ -209,7 +216,7 @@ These 15 variables from the random forest were statistically significant with a 
 
 
 \section{Discussion}
-Our machine learning models yielded low sensitivity, and fairly high specificity. With low sensitivity, we are getting a lot of false negatives and few true positives, however for our context and our intended application of these machine learning models, this could be beneficial in being extra cautious with individuals who are predicted to be at risk for an opioid overdose death. However, the low sensitivity may overburden counties' department of health services, which may lead to a completely impractical alogrithm, and thus it may have no actual impact on preventing opioid overdose death. Precision was very low, which may be due to the few number of opioid and non-opioid overdose events in our dataset.\\ 
+Our machine learning models yielded low sensitivity, and fairly high specificity. With low sensitivity, we are getting a lot of false negatives and few true positives, however for our context and our intended application of these machine learning models, this could be beneficial in being extra cautious with individuals who are predicted to be at risk for an opioid overdose death. However, the low sensitivity may overburden counties' department of health services, which may lead to a completely impractical algorithm, and thus it may have no actual impact on preventing opioid overdose death. Precision was very low, which may be due to the few number of opioid and non-opioid overdose events in our dataset.\\ 
 Another reason that our machine learning algorithms are not performing well is that we were not able to tune the hyperparameters, which we would expect to have a significant impact on performance. The neural network had such poor performance due to the fact that we used only four dense layers and ran the algorithm for 30 epochs. We would expect that a deep neural network with a large number of layers running for a large number of epochs would perform better, however we were computationally under-powered to implement such a technique. \\
 There are limitations to our work in that our algorithm may not be generalizeable to other county health systems, especially if they do not collect our selected similar data fields. Our study is also limited by the fact that we do not have other potentially relevant data fields that may be informative to understanding opioid overdose death, like socioeconomic status, medical history, diagnoses, and insurance claims. \\
 

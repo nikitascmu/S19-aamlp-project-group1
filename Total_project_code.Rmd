@@ -657,7 +657,8 @@ survival_data = survival_data %>% mutate(time = if_else(is.na(od_time), time_yea
 survival_data = survival_data %>% select(PERSON_ID, status, time)
 survival_data = merge(survival_data, dem, key="PERSON_ID")
 survival_data = merge(survival_data, age_df %>% select(PERSON_ID, age), key="PERSON_ID")
-survival_data = survival_data %>% mutate(time = if_else(time>108, 108, time))
+survival_data = survival_data %>% mutate(status = if_else(time>108, 0, status)) 
+#certain individuals have overdose events in 2018, so changed their od status to 0
 
 #plot 1 (overall kaplan meier curve)
 km = Surv(survival_data$time, survival_data$status) %>%
@@ -672,6 +673,7 @@ plot(km_gender, xlab= "Months In System",ylab="P(survive)", main = "Survival Cur
      col=c(1:3), mark.time = T); legend("bottomleft", c("Female","Male", "No Data & Other"), col=1:3, lty=c(1,1))
 summary(km_gender)
 
+
 #km race all categories
 km_race_all = survfit(Surv(survival_data$time, survival_data$status) ~ race, data=survival_data)
 summary(km_race_all)
@@ -685,8 +687,12 @@ km_race_all
 ```{r, message=FALSE, warning=FALSE}
 
 # Cox model
-cm = Surv(survival_data$time, survival_data$status) %>%
-  (function(x) coxph(x ~ age + gender + race, data=survival_data))(.)
+#given the survival analysis results above, we merged american indian individuals 
+#into the no data and other category because they have no overdose events
+cox_data_reg = survival_data %>% 
+  mutate(race = if_else(race=="American Indian/Alaskan Native", "No Data and Other", race))
+cm = Surv(cox_data_reg$time, cox_data_reg$status) %>%
+  (function(x) coxph(x ~ age + gender + race, data=cox_data_reg))(.)
 cm
 
 # Regularized Cox model

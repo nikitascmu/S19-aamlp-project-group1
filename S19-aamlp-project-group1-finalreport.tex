@@ -197,7 +197,7 @@ Table \ref{tab:km_race} below display the survival probabilities at the conclusi
 Next, we use a Cox Proportional Hazards model to analyze the survival probability of individuals by including age, gender and race as predictor variables. Table 
 
 \subsection{Variable Importance}
-We found that the most informative variables to opioid overdose was the total number of Tramadol prescribed(tram\_count), the total number of drug and alcohol services received(total\_da), being of white race(race\_White), the total number of lower court drug-related criminal cases(total\_cr\_drug\_cases), being of the male (gender\_Male) or female(gender\_Female) gender, median number of MME (median\_mme), total number of mental health service records (total\_mh), age (age), the most prescribed drug being oxymorphone HCl (most\_presc\_drug\_OXYMORPHONE\_HCL) or Tramadol (most\_presc\_drug\_TRAMADOL), the total number of criminal record cases (total\_cr\_cases), the average number of dispensed drugs (avg\_dispensed), being of Black / African American race (race\_Black.African.America), or the average number of days supply of drug prescribed (avg\_supply). 
+We found that the most informative variables to overdose was the total number of Tramadol prescribed(tram\_count), the total number of drug and alcohol services received(total\_da), being of white race(race\_White), the total number of lower court drug-related criminal cases(total\_cr\_drug\_cases). 
 These 15 variables from the random forest were statistically significant with a P-value less than 0.05 in the logistic regression as well, except for the average number of dispensed drugs (avg\_dispensed), being of the male gender(gender\_Male), and the total number of mental health service records (total\_mh).
 
 \begin{figure}[h!]
@@ -206,7 +206,6 @@ These 15 variables from the random forest were statistically significant with a 
 \caption{The top 15 variables of importance elucidated from the random forest model.}
 \label{fig:var_importance}
 \end{figure}
-
 
 
 \section{Discussion}

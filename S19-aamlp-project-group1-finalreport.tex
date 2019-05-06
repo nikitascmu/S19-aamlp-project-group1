@@ -37,55 +37,54 @@
 \maketitle
 \vspace*{5px}
 \begin{abstract}
-Opioid overdose deaths spiked in 2017, continuing to be a major concern for the US healthcare system. Major efforts have been dedicated to understand the demographic impacted and how the healthcare system can improve outcomes for individuals at risk. This paper explores the application of machine learning and statistical analyses to identify which could best predict (and prevent) overdose deaths using county-provided demographic, program activity and opiate prescription fills data for Medicaid beneficiaries from 2009-2017. The most superior models, Logistic Regression and Random Forest, yield an AUROC of approximately 85\%, correctly identifying 57\% of individuals who overdose. *Need to add a line about variable importance*. As such, this paper showcases how county-provided data can be used to predict and prevent overdoses (translatable to other counties), identifies the variables indicative of risk, and highlights modeling techniques that can be tuned to improve predictive performance, thereby taking a giant step towards overdose prevention.  
+Opioid overdose deaths spiked in 2017 and continue to be a major concern for the US healthcare system. Major efforts have been dedicated to understand the demographic impacted and how the healthcare system can improve outcomes for individuals at risk. This paper explores the application of machine learning and statistical analyses to identify which could best predict (and prevent) overdose deaths using county-provided demographic, program activity and opiate prescription fills data for Medicaid beneficiaries from 2009-2017. The models with superior performance, Logistic Regression and Random Forest, yield an AUROC of approximately 84\%, correctly identifying 57\% of individuals who overdose. *Need to add a line about variable importance*. As such, this paper showcases how county-provided data can be used to predict and prevent overdoses (translatable to other counties), identifies the variables indicative of risk, and highlights modeling techniques that can be tuned to improve predictive performance, thereby moving the field towards overdose prevention.  
 \end{abstract}
 
 \section{Introduction}
-Opioid abuse has been an emerging public health issue, and was declared a Public Health Emergency in 2017\footnote{\cite{HHS}}. National drug overdose deaths have increased over the past two decades, from 16,849 in 1999 to 70,237 in 2017\footnote{\cite{NIDA_ODR}}. This trend is especially affected by the onset of the opioid epidemic in the late 1990s\footnote{\cite{NIDA_OOC}}. Approximately 67\% of the overdose deaths in 2017 are due to involvement of any opioids and 24\% are specifically due to prescription opioids \footnote{\cite{NIDA_ODR}}. It has become pertinent, now more than ever before, to better understand the risk factors leading to overdoses and to determine the best way to prevent overdose deaths. \\
+Opioid abuse has been an emerging public health issue, and was declared a public health emergency in 2017\footnote{\cite{HHS}}. In the past two decades, national drug overdose deaths have increased from 16,849 in 1999 to 70,237 in 2017\footnote{\cite{NIDA_ODR}}. This trend is especially affected by the onset of the opioid epidemic in the late 1990s\footnote{\cite{NIDA_OOC}}. Approximately 67\% of the overdose deaths in 2017 were due to the involvement of any opioids (including illegal drugs like heroin and fetanyl) and 24\% are specifically due to legally prescribed opioids, like oxycodone (OxyContin®), hydrocodone (Vicodin®), codeine, morphine, etc.\footnote{\cite{NIDA_ODR}}\footnote{\cite{NIH_OpioidsInfo}}. It has become critical to better understand the risk factors leading to overdoses and to determine the best way to prevent overdose deaths. \\
 
-Crosier et al. predicted overdose frequency using random forests in order to uncover important features related to overdose frequency and course\footnote{\cite{Sage}}. Lobo et al. identified sub-groups of Pennsylvania patients at greater risk for opioid abuse in a k-means clustering algorithm\footnote{\cite{Lobo}}. This paper aims to contribute to this existing body of work by identifying data variables that are most indicative of risk, which could be crucial to preventing addiction and overdoses. In 2005, the Opioid Risk Tool was developed to help flag patients at risk for opioid abuse and overdose\footnote{\cite{Webster}}. However, due to the subjective nature of this tool and the spike of deaths in 2017, machine learning has been sought to provide a more objective and quantitative approach to estimate risk of opioid abuse and overdose. Acion et al. used a super learning approach to predict the successful treatment for patients with substance use disorders\footnote{\cite{Acion}}. Haller et al. utilized natural language processing on electronic health record data to assess risk and predict opioid abuse \footnote{\cite{Haller}}. \\
+Crosier et al. predicted overdose frequency using random forests in order to uncover important features related to the frequency and development of overdose events\footnote{\cite{Sage}}. Lobo et al. identified sub-groups of Pennsylvania patients at greater risk for opioid abuse in a k-means clustering algorithm\footnote{\cite{Lobo}}. Our work aims to contribute to this existing body of work by identifying features that are most indicative of risk, which is crucial to preventing addiction and overdoses. There exists an Opioid Risk Tool, developed in 2005, to flag patients at risk for opioid abuse and overdose\footnote{\cite{Webster}}. However, due to the subjective nature of this tool and the spike of deaths in 2017, machine learning has been sought to provide a more objective and quantitative approach to estimate risk of opioid abuse and overdose. A super learning approach was developed by Acion et al. to predict the successful treatment of patients with substance use disorders\footnote{\cite{Acion}}. Artificial intelligence was also applied in the sphere of predicting opioid abuse by Haller et al., who implemented natural language processing on electronic health record data to assess risk and predict opioid abuse\footnote{\cite{Haller}}. \\
 
-This paper strives to expand upon the aforementioned previous work, by identifying the machine learning algorithms that yield the highest predictive performance. Specifically, those models that correctly identify the greatest number of at-risk individuals. This project uses a set of demographic features, usage of county-provided programs, and opioid prescription information to predict overdose deaths (opioid and non-opioid). Specifically, it analyzes the data of Medicaid beneficiaries from 2009 to 2017 provided by Allegheny County Department of Human Services (DHS) to predict the risk of an individual dying due to an non-opioid or opioid-related overdose. The likely outcome of this analysis is the finding of at least one feature and at least one machine learning technique that is highly deterministic in the prediction of overdose deaths, thereby enhancing the space of addiction and overdose death prevention. 
+This paper strives to expand upon previous contributions to the field by identifying the machine learning algorithms that yield the highest predictive performance of overdose events. Specifically, those models that correctly identify the greatest number of at-risk individuals. This project uses datasets containing information concerning demographics, county-provided program usage, and opioid prescriptions to predict overdose deaths (opioid and non-opioid). Specifically, we analyze the data of Medicaid beneficiaries from 2009 to 2017 provided by the Allegheny County Department of Human Services (DHS) to predict the risk of death due to an non-opioid or opioid-related overdose. Here, we apply machine learning to uncover features and methods that successfully predict overdose death, and thereby enhance the space of addiction and overdose death prevention. 
 
 \section{Methods}
 \subsection{Original Data Description}
-DHS provided 3 datasets: demographic, program activity, and opiate prescription fills. These provide information for 120,650 individuals who have utilized DHS services between 2009 and 2017. The demographic dataset contains the following variables: person ID, race and gender. Figure \ref{fig:orig_dem} in the appendix displays the summary of the demographic dataset. Two points to note are: first, there are 19,531 individuals with no reported race and 210 individuals with no reported gender; second, there is also only one individual who is transgendered male to female and only 19 individuals who are Native Hawaiian / Pacific Islanders. \\
+We accessed 3 datasets from Allegheny County DHS: demographic, program activity, and opiate prescription fills. Information within contained data for 120,650 individuals who have utilized DHS services between 2009 and 2017. The demographic dataset (summarized in figure \ref{fig:orig_dem}) contained variables for person ID, race, and gender. Of note, there was missingness in terms of race data for 19,531 individuals and gender information for 210 individuals. Additionally, there were demographics that were not heavily represented in the rest of the dataset: one transgender female and 19 Native Hawaiian / Pacific Islanders. \\
 
-Figure \ref{fig:orig_prog} in the appendix summarizes the original program activity data. The program dataset contains 2,402,479 rows as each row is recording the activity (or activities) for an individual in any year-month since they entered the system. It contains the following variables: person ID, year and month of activity, the relevant activity information, and overdose details, if any. The program-related activity information collected includes: whether CYF program was used as child or parent (binary), the number of criminal court cases (drug or not) filed, whether mental health, drug and alcohol abuse, or prescription service was used (binary), and whether the individual was jailed (binary). Note that if an individual did not overdose, then those variables contained no information for said individual. Else, it was a 0 for non-opiate overdose and 1 for an opiate overdose. As such, this missingness is meaningful. There appears to be no additional missing data in the program activity dataset. \\
+The program dataset (summarized in figure \ref{fig:orig_prog}) contains 2,402,479 rows where each row denotes the activity (or activities) for an individual at any time since they entered the system. The program dataset contains variables for person ID, year and month of activity, overdose details (if any), and the DHS program-related relevant activity information. Program-related activity information included whether there was documentation for Child, Youth and Family (CYF) services used as child or parent (binary); the number of criminal court cases (drug or not) filed; mental health, drug and alcohol abuse, or prescription services (binary); and whether the individual was jailed (binary). If an individual experienced an overdose event, there were additional data fields for overdose date and a binary value for whether the overdose was opioid-related. The only missingness in the program activity dataset is in the overdose-related fields for individuals who did not overdose. As such, this missingness is important in considering the significance of our analyses. Otherwise, there is no additional missing data in the program activity dataset. \\
 
-Figure \ref{fig:orig_presc} in the appendix showcases the prescription data summary. This dataset contains 1,161,650 rows as each row is a prescription fill for an individual. The prescription information provided includes: the claim number (unique for each row), person ID, age at prescription, dispensed quantity, days supply, fill date, and information specific to the drug (drug strength, name variations, package description, and dosage form). Some points of note are: first, the last two columns (i.e. generic tier description and claim rank) provide no additional information and can be disregarded; second, there are missing, extreme or incomprehensible values in the prescription dataset, such as an age of -7990, dispensed quantity of 17936 and days supply of 907; third, there are three columns containing the drug names which all contain multiple name versions of the same drug; last, there are two columns pertaining to the dosage form, a condensed version and a descriptive version.
+The opiate prescription fills dataset (summarized in figure \ref{fig:orig_presc}) contains 1,161,650 rows, where each row represents a prescription fill for an individual. The prescription information variables are the claim number (unique for each row), person ID, age at prescription, dispensed quantity, days supply, fill date, and information specific to the drug (drug strength, name variations, package description, and dosage form). We did not include generic tier description and claim rank of prescriptions in our analyses for they are not informative. There were missing, extreme or incomprehensible values in the prescription dataset, such as an age of -7990, dispensed quantity of 17936 and days supply of 907. In addition, the prescription dataset contained three columns of  multiple versions of drug names for the same drug. There were two columns pertaining to the drug dosage form, a condensed version and a descriptive version.
 
 \subsection{Data Cleaning and Feature Extraction}
 \subsubsection{Demographic and Program Datasets}
-The missing race and gender information in the demographic dataset is possibly missing not at random (MNAR) as it may be directly related to the unreported value itself. So, this missingness was dealt with by allowing it to be its own category. Furthermore, in the race column specifically, given that the "Native Hawaiian / Pacific Islander" category was too small it was merged with the "No Data" category to create a new category called "No Data and Other." This was replicated for the gender column, merging the "Transgendered male to female" and the "No Data" categories into "No Data and Other."  In the program activity dataset, the outcome variable was cleaned by converting the 0, 1 and NA to "Non-Opiate Overdose", "Opiate Overdose" and "No Overdose". 
+The missing race and gender information in the demographic dataset is likely missing not at random (MNAR) as it may be directly related to the unreported value itself. We dealt with this missingness through assigning missing values their own category, "No Data". Furthermore, with respect to the race column, given that the "Native Hawaiian / Pacific Islander" demographic was underrepresented with only 19 individuals, we merged these individuals with the "No Data" race category to create a variable called "No Data and Other". This was replicated for the gender variable where we merged the "Transgendered male to female" and the "No Data" categories into "No Data and Other." With respect to the program activity dataset, we cleaned the outcome variable by converting the 0, 1 and NA to "Non-Opiate Overdose", "Opiate Overdose" and "No Overdose". 
 
 \subsubsection{Opiate Prescription Fills Dataset}
-Here are the cleaning tasks performed on this dataset:
-\begin{enumerate}[topsep=0pt,itemsep=-1ex,partopsep=1ex,parsep=1ex]
-  \item Extracted the age at which an individual got their first prescription (entered the dataset). If the minimum age was less than 0, the maximum age was used. If both values were less than 0, then they were considered missing. There were 26 individuals with missing age values; these were replaced with the median age of individuals in the entire dataset
-  \item Updated drug strength values: of oral solutions to 5-325/5ML and of Naloxone to 50MG-0.5MG
-  \item Cleaned days supply and dispensed quantity by censoring the extreme values. The top extreme values were replaced with the value at the 0.5\% percentile and bottom extreme with the value at the 95.5\% percentile. These percentile values were determined for each generic name and dosage form combination. 
-  \item Pulled opioid strength values from the drug's label name, normalized to be per 1 ML, MCG or MG (if applicable). Replaced missing values with those from provided drug strength column. 
-  \item Obtained Opioid Morphine Equivalent Conversion Factors\footnote{\cite{CMS}} to convert the above-mentioned opioid strength values into Morphine Milligram Equivalent (MME). The formula used is: 
-  $opioid\,strength * (dispensed\,quantity / days\,supply) * conversion\,factor$
-  \item Stripped the drug name (generic name) down to a common terminology to lower the number of categories. For example, "Oxycodone HCL" was replaced with "Oxycodone."
-  \item Replaced dosage forms with common terminology to reduce the number of categories. For example, "Tablet" and "Capsule" were changed to "Pill."
-\end{enumerate}
+The data cleaning tasks performed on this dataset were as follows: First, the age at which an individual got their first prescription (entered the dataset) was extracted. If the minimum age was less than 0, the maximum age was used. If both values were less than 0, then they were considered missing. There were 26 individuals with missing age values; these were replaced with the median age of individuals in the entire dataset. Next, drug strength values of oral solutions were updated to 5-325/5ML and of Naloxone were updated to 50MG-0.5MG. Next, days supply and dispensed quantity extreme values were censored. The top extreme values were replaced with the value at the 0.5\% percentile and bottom extreme with the value at the 95.5\% percentile. These percentile values were determined for each generic name and dosage form combination. Then, opioid strength values were pulled from the drug's label name, normalized to be per 1 ML, MCG or MG (if applicable). Missing values were replaced with those from provided drug strength column. Next, we obtained Opioid Morphine Equivalent Conversion Factors\footnote{\cite{CMS}} to convert the above-mentioned opioid strength values into Morphine Milligram Equivalent (MME). The formula used is: $opioid\,strength * (dispensed\,quantity / days\,supply) * conversion\,factor$
+Last, drug name (generic) and dosage forms were stripped to common terminology. An example is changing Oxycodone HCL to Oxycodone for drug name and combining Tablet and Capsule to Pill in dosage form. 
 
 \subsubsection{Final Dataset}
-30 meaningful features were extracted at the person ID level regarding each individual's demographic characteristics, their participation in DHS program activities, and their opiate prescription fills. Demographic characteristic features include: race, gender and age. DHS program usage features entail: cohort i.e. the start year, usage of CYF program as child ($total\_cyfchild$) and as parent ($total\_cyfparent$), use of mental health, drug and alcohol abuse and prescription services ($total\_mh$, $total\_da$, $total\_rx$), number of months spent in jail ($total\_acj$), and number of criminal cases ($total\_cr\_cases$) and drug-related cases filed in court ($total\_cr\_drug\_cases$). \\
+There were 30 meaningful features that were extracted at the person ID level regarding each individual's demographic characteristics, their participation in DHS program activities, and their opiate prescription fills. Demographic characteristic features included race, gender and age. DHS program usage features entailed cohort (the enrollment year in DHS services), usage of CYF program as child ($total\_cyfchild$) and as parent ($total\_cyfparent$), use of mental health, drug and alcohol abuse and prescription services ($total\_mh$, $total\_da$, $total\_rx$), number of months spent in jail ($total\_acj$), and number of criminal cases ($total\_cr\_cases$) and drug-related cases filed in court ($total\_cr\_drug\_cases$). \\
 
-Prescription activity features extracted include: the number of prescriptions ($num\_presc$), name of the most prescribed drug ($most\_presc\_drug$) and most prescribed dosage form ($most\_dose\_form$), count of top three drugs ($oxy\_count$, $tram\_count$, $hydrobit\_count$), count of top three dose forms ($pill\_count$, $patch\_count$, $liquid\_count$), average, median and mode MME ($avg\_mme$, $median\_mme$, $mode\_mme$), as well as average days supply and dispensed quantity ($avg\_supply$ and $avg\_dispensed$). Finally, overdose information ($od\_type$, $od\_month$, $od\_year$, $od\_date$) was added. 
+Prescription activity features extracted included the number of prescriptions ($num\_presc$), name of the most prescribed drug ($most\_presc\_drug$) and most prescribed dosage form ($most\_dose\_form$), count of top three drugs ($oxy\_count$, $tram\_count$, $hydrobit\_count$), count of top three dose forms ($pill\_count$, $patch\_count$, $liquid\_count$), average, median and mode MME ($avg\_mme$, $median\_mme$, $mode\_mme$), as well as average days supply and dispensed quantity ($avg\_supply$ and $avg\_dispensed$). Finally, overdose information ($od\_type$, $od\_month$, $od\_year$, $od\_date$) was added. 
 
 \subsubsection{Feature Choices}
-Some additional feature choices were made to enhance the final dataset and prepare for the prediction tasks. Features such as $most\_presc\_drug$ and $most\_dose\_form$, had categories that comprised less than 0.2\% of the values. To prevent errors during the prediction task, these low occurrence categories were combined to create a separate “Other” category. Plotting the distribution of the average, median and mode MME variables revealed that the median MME is less skewed and approximately normally distributed. Therefore, only the median MME was retained in the final dataset to avoid multicollinearity.\\
+Some additional feature choices were made to enhance the final dataset and prepare for the prediction tasks. Features such as $most\_presc\_drug$ and $most\_dose\_form$ had categories that were comprised of less than 0.2\% of the values. To prevent errors during the prediction task, these low occurrence categories were combined to create a separate “Other” category. We plotted the distribution of the average, median, and mode of morphine milligram equivalents (MME) variables to determine which mode of central tendency for MME was normally distributed. This led us to retain only median MME in the final dataset to avoid multicollinearity.\\
 
-The target or outcome variable was set to binary with 1 for Opiate Overdose or Non-Opiate Overdose and 0 for No Overdose. Non-opiate overdose simply means that no opioids were found in the individual's system upon death; however, given that these individuals were getting opioid prescriptions and they did overdose, they were included as 1 in the target variable. Furthermore, an argument could be made that individuals who overdose (opiate or non) share similar characteristics and so the additional data would be useful for the prediction task.\\ 
+We examined the outcome variable under a binary value of 1 for an "opiate overdose" or "non-opiate overdose" and 0 for there being "no overdose". "Non-opiate overdose" represents a situation for which there were no opioids found in the individual's system upon an overdose death. We include these events in our outcome variable due to the fact that these individuals were receiving opioid prescriptions, so in an effort to flag as many individuals as possible from dying from opioid overdose, we are willing to increase the number of potential false positives in being more inclusive in our outcome variable. Furthermore, we argue that individuals who overdose (opiate or non-opiate) share similar characteristics and so the inclusion of both types of overdose in our outcome variable is informative in the prediction task.Columns pertaining to the date of overdose were removed to avoid leakage in the machine learning models, as they are proxies for the target variable. All categorical variables were converted to dummy variables. We applied a log transformation to all feature variables. 
 
-Columns pertaining to the date of overdose were removed to avoid leakage in the machine learning models, as they are proxies for the target variable. All categorical variables were converted to dummy variables. Furthermore, a log transformation was applied to all variables prior to appending the target variable. 
+\subsection{Oversampling, Machine Learning and Statistical Models, and Evaluation Metrics}
+Since there is a severe under-representation of outcome variable events (1222 out of 120,650 individuals), the first model (multivariate logistic regression) was unable to capture a single case of overdose. As such. this paper utilized an oversampling method, Synthetic Minority Oversampling Technique (SMOTE) for the outcome variable. To do so, we divided the whole dataset into train and test with a 50-50\% split. We then ran SMOTE on the train set to generate synthetic data to train our models and then calculated performance on the original test set. Furthermore, to increase the performance of our machine learning models, we trained the data only on the top 20 critical features identified using the random forest algorithm.\\
 
-\subsection{Cohort}
-Table \ref{tab:table1} below provides an overview of the 120,650 individuals in the Allegheny County DHS cohort between 2009 and 2017. No individuals were excluded from the cohort. All missingness has been addressed to the extent possible; the strategy to address missingness as well as the assumptions made have been clearly stated.
+Six machine learning models were run and their performance in predicting overdose rates compared. These models include: multivariate logistic regression, ridge regression, random forest, AdaBoost, gradient boosting, and neural nets. We used 5-fold cross-validation for multivariate logistic regression, and 10-fold cross-validation for ridge regression, random forest, and gradient boosting. We also implemented lasso regularization. We evaluated and compared machine learning models through the area under the curve (AUC) of the Receiver Operating Characteristic (ROC) curves, the number of true positives, the number of false positives, sensitivity, specificity, and precision. The important or significant features used in these models will also be an additional point of comparison, specifically for the multivariate logistic regression and random forest models. \\
+
+This paper also includes a survival analysis, conducted using Kaplan-Meier estimation and a Cox Proportional Hazards Model. For the survival analysis, the time variable was the months in system and the event variable was the status of the individual at their last known month in the system. The event was 1 for overdose death and 0 otherwise. The Kaplan-Meier estimation was evaluated visually (with the survival curve) and with the model output. The Cox Proportional Hazards Model  evaluated visually using the outputted survival curve as well as with the median survival time (months in system). 
+
+\section{Results}
+
+Table \ref{tab:table1} provides an overview of the 120,650 individuals in the Allegheny County DHS cohort between 2009 and 2017. No individuals were excluded from the cohort. We addressed all missingness to the extent possible.
+
+\newpage
 
 \begin{table}[h!]
   \begin{center}
@@ -120,71 +119,93 @@ Table \ref{tab:table1} below provides an overview of the 120,650 individuals in 
   \end{center}
 \end{table}
 
-%%%Do we add anything else here?? any other EDA??
 
-\subsection{Models}
-This paper explores and compares five machine learning models in their performance in predicting whether an individual will overdose. These models are multivariate logistic regression, ridge regression, random forest, ada boosting, and gradient boosting. 
+\subsection{Evaluation of Machine Learning Models}
 
-Please add details regarding the machine learning models... also add a subsubsection pertaining to oversampling.
-
-\subsection{Evaluation Criteria}
-Need to explain AUROC, accuracy and other criteria we used to evaluate.
-Need to note that will also be striving to purely understand probability of survival and see if varies across subgroups (race, gender). Also, will be looking at importance of variables across models (rf, lr, survival). These are not necessarily evaluating these models, but allowing us to compare them and noting them for future work to compare as well. 
-
-\section{Results}
-
-\subsection{AUROC}
-We ran a series of machine learning methods to predict overdose deaths. We were not able to detect sufficient overdose deaths with logistic regression, and thus we implemented an oversampling method, Synthetic Minority Oversampling Technique (SMOTE). This gave us a AUC of 0.85. 
-We ran multivariate logistic regression on selected features using 5-fold cross-validation.
-We then ran ridge regression using lasso regularization and 10-fold cross-validation.
-We also applied random forest to predict overdose death, also using 10-fold cross-validation. 
-Gradient boosting machine with 10-fold cross-validation led to an AUC of 0.85.
-AdaBoost gave poorer performance than the aforementioned methods, with an AUC of 0.75. We then tested the performance of a neural network to predict opioid death, and found an even lower AUC of 0.5, equal to chance. 
 
 \begin{figure}[htp]
 \centering
-\includegraphics[width=12cm]{images/AUC_ML_opioids.png}
-\caption{Predictive performance for overdose deaths had an AUC of 0.85 for three machine learning methods (logistic regression, ridge logistic regression, and random forest), but demonstrated poor performance for gradient boosting, AdaBoost, and neural network).}
-\label{fig:lion}
+\includegraphics[width=12cm]{images/auc_curves.JPG}
+\caption{.}
+\label{fig:auc_curves}
 \end{figure}
 
-\subsection{Sensitivity vs. Specificity}
+
+\begin{table}[h!]
+  \begin{center}
+    \caption{Evaluation Metrics of the Machine Learning Models}
+    \label{tab:metrics}
+    \begin{tabular}{l|c|c|c|c|c|c}
+      \textbf{Model} & \textbf{TP} & \textbf{FP} & \textbf{Sensitivity (\%)} & \textbf{Specificity (\%)} & \textbf{Precision (\%)} & \textbf{AUC}\\
+      \hline
+      Multivariate Logistic Regression & 362 & 8654 & 57 & 86 & 4 & 0.83\\
+      Ridge Regression & 163 & 2422 & 26 & 96 & 6 & 0.83\\
+      Random Forest & 362 & 8654 & 57 & 86 & 4 & 0.83\\
+      Gradient Boosting & 138 & 1982 & 22 & 97 & 7 & 0.84\\
+      Ada Boost & 147 & 2389 & 23 & 96 & 6 & 0.69\\
+      Neural Net & 633 & 59692 & 100 & 0 & 0 & 0.5\\
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\newpage
 
 \subsection{Survival Analysis}
+We found
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=12cm]{images/kaplan_meier.JPG}
+\caption{Kaplan Meier curve of survival indicates that }
+\label{fig:km_original}
+\end{figure}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=12cm]{images/kaplan_meier_gender.JPG}
+\caption{Kaplan Meier curve by gender indicates a lower probability for survival for individuals in the "No Data & Other" category, and also slightly lower probability of survival for men, as compared to women.}
+\label{fig:km_gender}
+\end{figure}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=12cm]{images/kaplan_meier_race.JPG}
+\caption{Kaplan Meier curve by race indicates a lower probability for survival for white individuals, as compared to Black / African-American individuals. }
+\label{fig:km_race}
+\end{figure}
 
 \subsection{Variable Importance}
 
-
 \begin{figure}[htp]
 \centering
-\includegraphics[width=12cm]{images/Race_KaplanMeier.png}
-\caption{Kaplan Meier curve of survival indicates that }
-\label{fig:lion}
+\includegraphics[width=12cm]{images/variable_importance.JPG}
+\caption{Variable Importance... }
+\label{fig:var_importance}
 \end{figure}
 
-\begin{figure}[htp]
-\centering
-\includegraphics[width=12cm]{images/Coxmodel.png}
-\caption{Cox model indicates}
-\label{fig:lion}
-\end{figure}
 
-\section{Discussion and Related Work}
-Significance of results
-Limitations 
+
+\section{Discussion}
+Our machine learning models yielded low sensitivity, and fairly high specificity. With low sensitivity, we are getting a lot of false negatives and few true positives, however for our context and our intended application of these machine learning models, this could be beneficial in being extra cautious with individuals who are predicted to be at risk for an opioid overdose death. However, the low sensitivity may overburden countys' department of health services, which may lead to a completely impractical alogrithm, and thus it may have no actual impact on preventing opioid overdose death. Precision was very low, which may be due to the few number of opioid and non-opioid overdose events in our dataset. 
+There are limitations to our work in that our algorithm may not be translatable to other county health systems, especially if they do not selected similar data fields.
+
+
+** MORE Limitations 
 
 \section{Conclusion}
+In implementing appropriate data cleaning and feature selection, we were able to implement a machine learning model with sufficient predictive power to perhaps be of use to a county health department to predict opioid overdose death. 
+
+how county-provided data can be used to predict and prevent overdoses (translatable to other counties), identifies the variables indicative of risk, and highlights modeling techniques that can be tuned to improve predictive performance, thereby taking a giant step towards overdose prevention. 
 
 \newpage
 \appendix
-\section*{Appendix A.}
-Some more details about those methods, so we can actually replicate them.
-
+\section*{Appendix}
 We also performed a correlation analysis to better understand the relationship between numerical variables. During the exploration we found out some interesting relationship like hydrobit count is positively correlated with total Rx, number of prescriptions, and pill count.
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=5in]{original_dem_summary.JPG}
+\includegraphics[width=5in]{images/original_dem_summary.JPG}
 \end{center}
 \caption{Summary statistics of the original demographic dataset.}
 \label{fig:orig_dem}
@@ -192,7 +213,7 @@ We also performed a correlation analysis to better understand the relationship b
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=6in]{original_prog_summary.JPG}
+\includegraphics[width=6in]{images/original_prog_summary.JPG}
 \end{center}
 \caption{Summary statistics of the original program activity dataset.}
 \label{fig:orig_prog}
@@ -200,7 +221,7 @@ We also performed a correlation analysis to better understand the relationship b
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=6in]{original_presc_summary.JPG}
+\includegraphics[width=6in]{imagesoriginal_presc_summary.JPG}
 \end{center}
 \caption{Summary statistics of the original opiate prescription fills dataset.}
 \label{fig:orig_presc}

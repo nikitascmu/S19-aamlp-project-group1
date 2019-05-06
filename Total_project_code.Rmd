@@ -664,21 +664,20 @@ km = Surv(survival_data$time, survival_data$status) %>%
   (function(x) survfit(x ~ 1, data=survival_data))(.)
 # Kaplan-Meier curve
 plot(km, xlab= "Months In System",ylab="P(survive)", main = "Survival Curve", mark.time=T)
-km
+summary(km)
 
 #plot 2 (by gender)
 km_gender = survfit(Surv(survival_data$time, survival_data$status) ~ gender, data=survival_data)
 plot(km_gender, xlab= "Months In System",ylab="P(survive)", main = "Survival Curve: By Gender",
      col=c(1:3), mark.time = T); legend("bottomleft", c("Female","Male", "No Data & Other"), col=1:3, lty=c(1,1))
-km_gender
+summary(km_gender)
 
-#plot 3 (by race but only subsetting to white and black/african-american)
-survival_data_subset = survival_data %>% filter(race==c("White", "Black/African-American"))
-km_race = survfit(Surv(survival_data_subset$time, survival_data_subset$status) ~ race, data=survival_data_subset)
-plot(km_race, xlab= "Months In System",ylab="P(survive)", main = "Survival Curve: By Race",
-     col=c(1:2), mark.time = T); legend("bottomleft", c("Black/African-American","White"), col=1:2, lty=c(1,1))
-km_race
+#km race all categories
+km_race_all = survfit(Surv(survival_data$time, survival_data$status) ~ race, data=survival_data)
+summary(km_race_all)
 
+
+km_race_all
 ```
 
 ## Survival Analysis: Cox Proportional Hazards Model (All Individuals)
@@ -703,8 +702,5 @@ plot(cvlm)
 
 # showing coefficients of model with minimum lambda
 coef(lm, s=cvlm$lambda.min)
-
-# showing coefficients of model with lambda within 1se
-coef(lm, s=cvlm$lambda.1se)
 
 ```

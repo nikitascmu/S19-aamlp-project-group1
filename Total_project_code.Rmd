@@ -468,7 +468,7 @@ fitControl <- trainControl(method = "cv", number = 5, allowParallel = TRUE)
 fit <- train(target ~ ., method="rf",data=balanced.data,trControl = fitControl)
 
 var.imp <- varImp(fit)
-plot(var.imp,top=15, main="Variable Importance")
+plot(var.imp,top=15, main="Top 15 Variables Determined via Random Forest")
 ```
 
 

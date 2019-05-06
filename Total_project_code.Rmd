@@ -657,6 +657,7 @@ survival_data = survival_data %>% mutate(time = if_else(is.na(od_time), time_yea
 survival_data = survival_data %>% select(PERSON_ID, status, time)
 survival_data = merge(survival_data, dem, key="PERSON_ID")
 survival_data = merge(survival_data, age_df %>% select(PERSON_ID, age), key="PERSON_ID")
+survival_data = survival_data %>% mutate(time = if_else(time>108, 108, time))
 
 #plot 1 (overall kaplan meier curve)
 km = Surv(survival_data$time, survival_data$status) %>%
@@ -707,4 +708,3 @@ coef(lm, s=cvlm$lambda.min)
 coef(lm, s=cvlm$lambda.1se)
 
 ```
-

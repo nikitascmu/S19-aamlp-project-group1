@@ -78,7 +78,7 @@ Since there is a severe under-representation of outcome variable events (1222 ou
 
 Six machine learning models were run and their performance in predicting overdose rates compared. These models include: multivariate logistic regression, ridge regression, random forest, AdaBoost, gradient boosting, and neural nets. We used 5-fold cross-validation for multivariate logistic regression, and 10-fold cross-validation for ridge regression, random forest, and gradient boosting. We also implemented lasso regularization. We evaluated and compared machine learning models through the area under the curve (AUC) of the Receiver Operating Characteristic (ROC) curves, the number of true positives, the number of false positives, sensitivity, specificity, and precision. The important or significant features used in these models will also be an additional point of comparison, specifically for the multivariate logistic regression and random forest models. \\
 
-This paper also includes a survival analysis, conducted using Kaplan-Meier estimation and a Cox Proportional Hazards Model. For the survival analysis, the time variable was the months in system and the event variable was the status of the individual at their last known month in the system. The event was 1 for overdose death and 0 otherwise. The Kaplan-Meier estimation was evaluated visually (with the survival curve) and with the model output. The Cox Proportional Hazards Model  evaluated visually using the outputted survival curve as well as with the median survival time (months in system). 
+This paper also includes a survival analysis, conducted using Kaplan-Meier estimation and Cox Proportional Hazards models. For the survival analysis, the time variable was the months in system and the event variable was the status of the individual at their last known month in the system. The event was 1 for overdose death and 0 otherwise. The Kaplan-Meier estimation was evaluated visually (with the survival curve) along with the model output. Both normal and regularized versions of the Cox Model were produced. The coefficients, exponent coefficients and their corresponding p-values were used to understand and evaluate both models. Cross-validation was used to determine the best lambda to use for the regularized Cox Model. 
 
 \section{Results}
 
@@ -90,7 +90,7 @@ Table \ref{tab:table1} provides an overview of the 120,650 individuals in the Al
   \begin{center}
     \caption{Demographics of Allegheny County DHS Cohort (2009-2017).}
     \label{tab:table1}
-    \begin{tabular}{l|c|r} % <-- Alignments: 1st column left, 2nd middle and 3rd right, with vertical lines in between
+    \begin{tabular}{l|c|r}
       \textbf{Characteristic} & \textbf{N} & \textbf{Percentage (\%)}\\
       \hline
       $Race$ & $ $ & $ $ \\
@@ -121,7 +121,7 @@ Table \ref{tab:table1} provides an overview of the 120,650 individuals in the Al
 
 
 \subsection{Evaluation of Machine Learning Models}
-
+The ROC curves of all 6 machine learning models run in this paper are showcased in figure \ref{fig:auc_curves} below. These curves, along with their reported AUCs, indicate that Gradient Boosting performs the best with Logistic Regression, Ridge Regression, Random Forest close behind. AdaBoost does not perform well and Neural Networks perform as good as chance. However, for this use case in particular, it is more critical to identify the individuals who may overdose (true positives) than to eliminate  
 
 \begin{figure}[htp]
 \centering
@@ -151,20 +151,31 @@ Table \ref{tab:table1} provides an overview of the 120,650 individuals in the Al
 
 \newpage
 
-\subsection{Survival Analysis}
+\subsection{Understanding the Survival Analysis}
 We found
 
-\begin{figure}[htp]
+\begin{figure}
 \centering
-\includegraphics[width=12cm]{images/kaplan_meier.JPG}
-\caption{Kaplan Meier curve of survival indicates that }
-\label{fig:km_original}
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=10cm\linewidth]{images/kaplan_meier_gender.JPG}
+  \caption{A Kaplan Meier curve by gender indicates a lower probability for survival for individuals in the "No Data and Other" category, and also slightly lower probability of survival for men, as compared to women.}
+  \label{fig:sub1}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{image1}
+  \caption{A subfigure}
+  \label{fig:sub2}
+\end{subfigure}
+\caption{A figure with two subfigures}
+\label{fig:test}
 \end{figure}
 
 \begin{figure}[htp]
 \centering
 \includegraphics[width=12cm]{images/kaplan_meier_gender.JPG}
-\caption{Kaplan Meier curve by gender indicates a lower probability for survival for individuals in the "No Data & Other" category, and also slightly lower probability of survival for men, as compared to women.}
+\caption{Kaplan Meier curve by gender indicates a lower probability for survival for individuals in the "No Data and Other" category, and also slightly lower probability of survival for men, as compared to women.}
 \label{fig:km_gender}
 \end{figure}
 
@@ -190,7 +201,7 @@ We found
 Our machine learning models yielded low sensitivity, and fairly high specificity. With low sensitivity, we are getting a lot of false negatives and few true positives, however for our context and our intended application of these machine learning models, this could be beneficial in being extra cautious with individuals who are predicted to be at risk for an opioid overdose death. However, the low sensitivity may overburden countys' department of health services, which may lead to a completely impractical alogrithm, and thus it may have no actual impact on preventing opioid overdose death. Precision was very low, which may be due to the few number of opioid and non-opioid overdose events in our dataset. 
 There are limitations to our work in that our algorithm may not be translatable to other county health systems, especially if they do not selected similar data fields.
 
-
+One of the reasons machine learning algorithms are not performing well is we are not tuning the hyperparameters. We expect algorithms to perform better if their hyperparameters are tuned efficiently. The reason behind the poor performance of neural net is we are using only four dense layers and running for 30 epochs. Deep neural nets with a large number of layers running for a large number of epochs are expected to perform better. 
 ** MORE Limitations 
 
 \section{Conclusion}
@@ -207,7 +218,7 @@ We also performed a correlation analysis to better understand the relationship b
 \begin{center}
 \includegraphics[width=5in]{images/original_dem_summary.JPG}
 \end{center}
-\caption{Summary statistics of the original demographic dataset.}
+\caption{Summary of the original demographic dataset.}
 \label{fig:orig_dem}
 \end{figure}
 
@@ -215,16 +226,23 @@ We also performed a correlation analysis to better understand the relationship b
 \begin{center}
 \includegraphics[width=6in]{images/original_prog_summary.JPG}
 \end{center}
-\caption{Summary statistics of the original program activity dataset.}
+\caption{Summary of the original program activity dataset.}
 \label{fig:orig_prog}
 \end{figure}
 
 \begin{figure}
 \begin{center}
-\includegraphics[width=6in]{imagesoriginal_presc_summary.JPG}
+\includegraphics[width=6in]{images/original_presc_summary.JPG}
 \end{center}
-\caption{Summary statistics of the original opiate prescription fills dataset.}
+\caption{Summary of the original opiate prescription fills dataset.}
 \label{fig:orig_presc}
+\end{figure}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=12cm]{images/kaplan_meier.JPG}
+\caption{Kaplan Meier curve of survival indicates that }
+\label{fig:km_original}
 \end{figure}
 
 \newpage

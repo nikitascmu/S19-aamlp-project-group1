@@ -37,7 +37,7 @@
 \maketitle
 \vspace*{5px}
 \begin{abstract}
-Opioid overdose deaths spiked in 2017 and continue to be a major concern for the US healthcare system. Major efforts have been dedicated to understand the demographic impacted and how the healthcare system can improve outcomes for individuals at risk. This paper explores the application of machine learning and statistical analyses to identify which could best predict (and prevent) overdose deaths using county-provided demographic, program activity and opiate prescription fills data for Medicaid beneficiaries from 2009-2017. The models with superior performance, Multivariate Logistic Regression and Random Forest, yield an AUROC of approximately 0.83, correctly identifying 57\% of individuals who overdose. *Need to add a line about variable importance*. As such, this paper showcases how county-provided data can be used to predict and prevent overdoses (translatable to other counties), identifies the variables indicative of risk, and highlights modeling techniques that can be tuned to improve predictive performance, thereby moving the field towards overdose prevention.  
+Opioid overdose deaths spiked in 2017 and continue to be a major concern for the US healthcare system. Major efforts have been dedicated to understand the demographic impacted and how the healthcare system can improve outcomes for individuals at risk. This paper explores the application of machine learning and statistical analyses to identify which could best predict (and prevent) overdose deaths using county-provided demographic, program activity and opiate prescription fills data for Medicaid beneficiaries from 2009-2017. The models with superior performance, Multivariate Logistic Regression and Random Forest, yield an AUROC of approximately 0.83, correctly identifying 57\% of individuals who overdose. We found that the total number of Tramadol prescribed to an individual, the total number of drug and alcohol services received, being of white race, and the total number of lower court drug-related criminal cases were the most informative variables towards predicting opioid overdose deaths. This paper showcases how county-provided data can be used to predict and prevent overdoses (translatable to other counties), identifies the variables indicative of risk, and highlights modeling techniques that can be tuned to improve predictive performance, thereby moving the field towards overdose prevention.  
 \end{abstract}
 
 \section{Introduction}
@@ -78,7 +78,7 @@ Since there is a severe under-representation of outcome variable events (1,222 o
 
 Six machine learning models were run and their performance in predicting overdose rates compared. These models include: multivariate logistic regression, ridge regression, random forest, AdaBoost, gradient boosting, and neural nets. We used 5-fold cross-validation for multivariate logistic regression, and 10-fold cross-validation for ridge regression, random forest, and gradient boosting. We also implemented lasso regularization. Note that for this use case in particular, it is more critical to identify the individuals who may overdose (true positives) than to eliminate individuals not at risk from consideration (true negatives). Furthermore, given the limited resources available to tackle such a pressing issue, it is valuable to minimize (to the extent possible) the number of individuals incorrectly identified to be at risk (false positives). Therefore, we evaluated and compared machine learning models through the area under the curve (AUC) of the Receiver Operating Characteristic (ROC) curves, the number of true positives, the number of false positives, sensitivity, specificity, and precision. The important or significant features used in these models will also be an additional point of comparison, specifically for the multivariate logistic regression and random forest models.\\
 
-This paper also includes a survival analysis, conducted using Kaplan-Meier estimation and Cox Proportional Hazards models. For the survival analysis, the time variable was the months in system and the event variable was the status of the individual at their last known month in the system. The event was 1 for overdose death and 0 otherwise. The Kaplan-Meier estimation was evaluated visually (with the survival curve) along with the model output. Both normal and regularized versions of the Cox Model were produced. The coefficients, exponent coefficients and their corresponding p-values were used to understand and evaluate both models. Cross-validation was used to determine the best lambda to use for the regularized Cox Model. 
+This paper also includes a survival analysis, conducted using Kaplan-Meier estimation and Cox Proportional Hazards models. For the survival analysis, the time variable was the months in system and the event variable was the status of the individual at their last known month in the system. The maximum month in the system is 108 months (December, 2017). The event was 1 for overdose death and 0 otherwise. The Kaplan-Meier estimation was evaluated visually (with the survival curve) along with the model output. Both normal and regularized versions of the Cox Model were produced. The coefficients, exponent coefficients and their corresponding p-values were used to understand and evaluate both models. Cross-validation was used to determine the best lambda to use for the regularized Cox Model. 
 Code is available at https://github.com/nikitascmu/S19-aamlp-project-group1. 
 
 \section{Results}
@@ -153,33 +153,57 @@ These curves, along with their reported AUCs, indicate that Gradient Boosting pe
 Table \ref{tab:metrics} summarizes the performance of all six machine learning models in predicting overdose deaths. Please note that there are 633 overdoses in the test dataset. As seen in this table, despite having the highest AUC, Gradient Boosting correctly identifies only 22\% of overdose deaths (few relative to the other high performing models). Neural nets identifies all overdose deaths simply because it classifies every individual at risk of overdose, so it can be excluded from consideration. Of the remaining four models, Multivariate Logistic Regression and Random Forest perform the best, correctly identifying 57\% of the at-risk individuals. 
 
 \subsection{Understanding the Survival Analysis}
-Survival analysis using the Kaplan-Meier estimation yields a median survival of 110 months in system. This can be seen in the survival curve in figure \ref{fig:km_original} in the appendix. A slight decline in the probability of survival can only be seen after an individual has been in the system for over 90 months (7.5 years). We can also see that individuals have dropped out of the system throughout the time-frame. However, 
+Survival analysis using the Kaplan-Meier estimation yields a survival curve seen in figure \ref{fig:km_original} in the appendix. The plot shows us that the probability of survival gradually declines from 100\% at the beginning to 96.5\% at the final month in the system (108 month mark). Individuals have dropped out of the system i.e. stopped utilizing DHS services and filling prescriptions at various points throughout the time-frame. The earliest time at which we start to see a decline in survival probability is 8 months.\\
+
+Next, we explored if and how this probability of survival changes among various gender and race subgroups. Figure \ref{fig:km_gender} shows us that females have a higher probability of survival than males in this dataset. Furthermore, individuals who are in the 'no data and other' category have a relatively lower probability of survival. Females have a 97.4\% probability of surviving, males have a 95.3\% probability of surviving, and individuals who have either not reported their gender or are transgender female have a 72.7\% probability of surviving an overdose event by the time they conclude their time in the system. \\
 
 \begin{figure}[h!]
 \centering
 \begin{minipage}{.5\textwidth}
   \centering
-  \includegraphics[width=1\linewidth]{images/kaplan_meier_gender.JPG}
-  \caption{Kaplan Meier curve by gender indicates a lower probability for survival for individuals in the "No Data and Other" category, and also slightly lower probability of survival for men, as compared to women.}
-  \label{fig:km_gender}
+  \includegraphics[width=1\linewidth]{images/kaplan_meier.JPG}
+  \caption{Kaplan Meier survival curve of all 120,650 individuals in the dataset.}
+  \label{fig:km_original}
 \end{minipage}%
 \begin{minipage}{.5\textwidth}
   \centering
-  \includegraphics[width=1\linewidth]{images/kaplan_meier_race.JPG}
-  \caption{Kaplan Meier curve by race indicates a lower probability for survival for white individuals, as compared to Black / African-American individuals.}
-  \label{fig:km_race}
+  \includegraphics[width=1\linewidth]{images/kaplan_meier_gender.JPG}
+  \caption{Kaplan Meier curve by gender.}
+  \label{fig:km_gender}
 \end{minipage}
 \end{figure}
 
+Table \ref{tab:km_race} below display the survival probabilities at the conclusion of time in the system by race. Since no American Indian individuals experience an overdose event, no survival probability was calculated for them. There appear to be subtle differences in survival probabilities among the remaining racial categories. For example, we see that White individuals have the lowest relative survival probability (95\%) and Asian individuals have the highest survival probability (99.6\%). None of the probabilities, however, are lower than 95\% and the differences are not as huge as those seen by gender alone. 
 
+\begin{table}[h!]
+  \begin{center}
+    \caption{Probability of survival by Race}
+    \label{tab:km_race}
+    \scalebox{0.7}{
+    \begin{tabular}{l|c|c|c|c|c|c}
+      \textbf{Race} & \textbf{Probability of Survival (\%)} \\
+      \hline
+     American Indian & Not Applicable \\
+     Asian & 99.6 \\
+     Biracial or Multiracial & 96.6 \\
+     Black or African American & 98.5 \\
+     No Data or Other & 97.4 \\
+     White & 95.0 \\
+     \hline
+    \end{tabular}}
+  \end{center}
+\end{table}
+
+Next, we use a Cox Proportional Hazards model to analyze the survival probability of individuals by including age, gender and race as predictor variables. Table 
 
 \subsection{Variable Importance}
-We found that the most informative variables to opioid overdose was the total number of Tramadol prescribed(tram\_count), the total number of drug and alcohol services received(total\_da), being of white race(race\_White), the total number of lower court drug-related criminal cases(total\_cr\_drug\_cases), being of the male (gender\_Male) or female(gender\_Female) gender, median number of MME (median\_mme), total number of mental health service records of services
+We found that the most informative variables to opioid overdose was the total number of Tramadol prescribed(tram\_count), the total number of drug and alcohol services received(total\_da), being of white race(race\_White), the total number of lower court drug-related criminal cases(total\_cr\_drug\_cases), being of the male (gender\_Male) or female(gender\_Female) gender, median number of MME (median\_mme), total number of mental health service records (total\_mh), age (age), the most prescribed drug being oxymorphone HCl (most\_presc\_drug\_OXYMORPHONE\_HCL) or Tramadol (most\_presc\_drug\_TRAMADOL), the total number of criminal record cases (total\_cr\_cases), the average number of dispensed drugs (avg\_dispensed), being of Black / African American race (race\_Black.African.America), or the average number of days supply of drug prescribed (avg\_supply). 
+These 15 variables from the random forest were statistically significant with a P-value less than 0.05 in the logistic regression as well, except for the average number of dispensed drugs (avg\_dispensed), being of the male gender(gender\_Male), and the total number of mental health service records (total\_mh).
 
 \begin{figure}[h!]
 \centering
 \includegraphics[width=12cm]{images/variable_importance.JPG}
-\caption{Variable Importance... }
+\caption{The top 15 variables of importance elucidated from the random forest model.}
 \label{fig:var_importance}
 \end{figure}
 
@@ -199,9 +223,8 @@ how county-provided data can be used to predict and prevent overdoses (translata
 \newpage
 \appendix
 \section*{Appendix}
-We also performed a correlation analysis to better understand the relationship between numerical variables. During the exploration we found out some interesting relationship like hydrobit count is positively correlated with total Rx, number of prescriptions, and pill count.
 
-\begin{figure}
+\begin{figure}[h!]
 \begin{center}
 \includegraphics[width=5in]{images/original_dem_summary.JPG}
 \end{center}
@@ -209,7 +232,7 @@ We also performed a correlation analysis to better understand the relationship b
 \label{fig:orig_dem}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h!]
 \begin{center}
 \includegraphics[width=6in]{images/original_prog_summary.JPG}
 \end{center}
@@ -217,19 +240,12 @@ We also performed a correlation analysis to better understand the relationship b
 \label{fig:orig_prog}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h!]
 \begin{center}
 \includegraphics[width=6in]{images/original_presc_summary.JPG}
 \end{center}
 \caption{Summary of the original opiate prescription fills dataset.}
 \label{fig:orig_presc}
-\end{figure}
-
-\begin{figure}[htp]
-\centering
-\includegraphics[width=12cm]{images/kaplan_meier.JPG}
-\caption{Kaplan Meier curve of survival indicates that }
-\label{fig:km_original}
 \end{figure}
 
 \newpage

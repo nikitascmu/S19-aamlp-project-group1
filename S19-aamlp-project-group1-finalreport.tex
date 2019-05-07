@@ -79,11 +79,10 @@ Since there is a severe under-representation of outcome variable events (1,222 o
 Six machine learning models were run and their performance in predicting overdose rates compared. These models include: multivariate logistic regression, ridge regression, random forest, AdaBoost, gradient boosting, and neural nets. We used 5-fold cross-validation for multivariate logistic regression, and 10-fold cross-validation for ridge regression, random forest, and gradient boosting. We also implemented lasso regularization. Note that for this use case in particular, it is more critical to identify the individuals who may overdose (true positives) than to eliminate individuals not at risk from consideration (true negatives). Furthermore, given the limited resources available to tackle such a pressing issue, it is valuable to minimize (to the extent possible) the number of individuals incorrectly identified to be at risk (false positives). Therefore, we evaluated and compared machine learning models through the area under the curve (AUC) of the Receiver Operating Characteristic (ROC) curves, the number of true positives, the number of false positives, sensitivity, specificity, and precision. The important or significant features used in these models will also be an additional point of comparison, specifically for the multivariate logistic regression and random forest models.\\
 
 This paper also includes a survival analysis, conducted using Kaplan-Meier estimation and Cox Proportional Hazards models. For the survival analysis, the time variable was the months in system and the event variable was the status of the individual at their last known month in the system. The maximum month in the system is 108 months (December, 2017). The event was 1 for overdose death and 0 otherwise. The Kaplan-Meier estimation was evaluated visually (with the survival curve) along with the model output. Both normal and regularized versions of the Cox Model were produced. The coefficients, exponent coefficients and their corresponding p-values were used to understand and evaluate both models. Cross-validation was used to determine the best lambda to use for the regularized Cox Model. 
-Code is available at https://github.com/nikitascmu/S19-aamlp-project-group1. 
 
 \section{Results}
 
-Table \ref{tab:table1} provides an overview of the 120,650 individuals in the Allegheny County DHS cohort between 2009 and 2017. No individuals were excluded from the cohort. We addressed all missingness to the extent possible.
+Table \ref{tab:table1} provides an overview of the 120,650 individuals in the Allegheny County DHS cohort between 2009 and 2017. No individuals were excluded from the cohort. We addressed all missingness to the extent possible.\\
 
 \begin{table}[h!]
   \begin{center}
@@ -129,7 +128,7 @@ The ROC curves of all 6 machine learning models run in this paper are showcased 
 \label{fig:auc_curves}
 \end{figure}
 
-These curves, along with their reported AUCs, indicate that Gradient Boosting performs the best with Logistic Regression, Ridge Regression, Random Forest close behind. AdaBoost does not perform well and Neural Networks perform only as good as chance. As such, AdaBoost and Neural Networks can be dropped from consideration for the time being. However, it would be premature to select Gradient Boosting as the best model. As stated earlier, it is vital to identify the individuals who are at risk of overdose (true positives) while keeping the number of false identifications to a minimum. As such, while Gradient Boosting may appear to perform the best, whether it is truly the best model in this case depends on its performance on additional evaluation metrics. 
+These curves, along with their reported AUCs, indicate that Gradient Boosting performs the best with Logistic Regression, Ridge Regression, Random Forest close behind. AdaBoost does not perform well and Neural Networks perform only as good as chance. As such, AdaBoost and Neural Networks can be dropped from consideration for the time being. However, it would be premature to select Gradient Boosting as the best model. As stated earlier, it is vital to identify the individuals who are at risk of overdose (true positives) while keeping the number of false identifications to a minimum. As such, while Gradient Boosting may appear to perform the best, whether it is truly the best model in this case depends on its performance on additional evaluation metrics. \\
 
 \begin{table}[h!]
   \begin{center}
@@ -153,9 +152,9 @@ These curves, along with their reported AUCs, indicate that Gradient Boosting pe
 Table \ref{tab:metrics} summarizes the performance of all six machine learning models in predicting overdose deaths. Please note that there are 633 overdoses in the test dataset. As seen in this table, despite having the highest AUC, Gradient Boosting correctly identifies only 22\% of overdose deaths (few relative to the other high performing models). Neural nets identifies all overdose deaths simply because it classifies every individual at risk of overdose, so it can be excluded from consideration. Of the remaining four models, Multivariate Logistic Regression and Random Forest perform the best, correctly identifying 57\% of the at-risk individuals. 
 
 \subsection{Understanding the Survival Analysis}
-Survival analysis using the Kaplan-Meier estimation yields a survival curve seen in figure \ref{fig:km_original} in the appendix. The plot shows us that the probability of survival gradually declines from 100\% at the beginning to 96.6\% at the final month in the system (108 month mark). Individuals have dropped out of the system i.e. stopped utilizing DHS services and filling prescriptions at various points throughout the time-frame. The earliest time at which we start to see a decline in survival probability is 8 months.\\
+Survival analysis using the Kaplan-Meier estimation yields a survival curve seen in figure \ref{fig:km_original} in the appendix. The plot shows us that the probability of survival gradually declines from 100\% at the beginning to 96.6\% at the final month in the system (108 month mark). Individuals have dropped out i.e. stopped utilizing DHS services at various points throughout. The earliest time at which we start to see a decline in survival probability is 8 months.\\
 
-Next, we explored if and how this probability of survival changes among various gender and race subgroups. Figure \ref{fig:km_gender} shows us that females have a higher probability of survival than males in this dataset. Furthermore, individuals who are in the 'no data and other' category have a relatively lower probability of survival. Females have a 97.5\% probability of surviving, males have a 95.3\% probability of surviving, and individuals who have either not reported their gender or are transgender female have a 72.7\% probability of surviving an overdose event by the time they conclude their time in the system. \\
+Next, we explored if and how this probability of survival changes among various gender and race subgroups. Figure \ref{fig:km_gender} shows us that females have a higher probability of survival than males in this dataset. Furthermore, individuals who are in the 'no data and other' category have a relatively lower probability of survival. Females have a 97.5\% probability of surviving, males have a 95.3\% probability of surviving, and individuals who have either not reported their gender or are transgender female have a 72.7\% probability of surviving an overdose event by the time they conclude their time in the system. 
 
 \begin{figure}[h!]
 \centering
@@ -174,6 +173,7 @@ Next, we explored if and how this probability of survival changes among various 
 \end{figure}
 
 Table \ref{tab:km_race} below display the survival probabilities at the conclusion of time in the system by race. Since no American Indian or Native Alaskan individuals experience an overdose event, no survival probability was calculated for them. There appear to be subtle differences in survival probabilities among the remaining racial categories. For example, we see that White individuals have the lowest relative survival probability (95\%) and Asian individuals have the highest survival probability (99.6\%). None of the probabilities, however, are lower than 95\% and the differences are not as huge as those seen by gender alone. 
+\vspace*{2.5px}
 
 \begin{table}[h!]
   \begin{center}
@@ -194,7 +194,11 @@ Table \ref{tab:km_race} below display the survival probabilities at the conclusi
   \end{center}
 \end{table}
 
-Next, we use a Cox Proportional Hazards model to analyze the survival probability of individuals by including age, gender and race as predictor variables. Figure \ref{fig:cox_model} below shows the output of the Cox model which indicates that age, being male, being in the "No Data and Other" gender category, and being White are statistically significant predictors of survival. The base variables are being female and being Asian. Given that there are no overdose events for the American Indian or Native Alaskan individuals, their data was merged into the "No Data and Other" race category so as to not skew the results. The results show that, \textbf{holding all other things constant}: a one year increase in age is associated with an increase in hazard by a factor of 1.028 or 2.8\%; compared to being female, being male increases hazard by a factor of 1.87 or 87\% and being an individual with no reported gender or other increases hazard by a factor of 7.9 or 690\%; and compared to being Asian, being White increases hazard by a factor of 8.2 or 720\%. These findings are aligned with our findings using the Kaplan Meier estimation. 
+Next, we use a Cox Proportional Hazards model to analyze the survival probability of individuals by including age, gender and race as predictor variables. Figure \ref{fig:cox_model} below shows the output of the Cox model which indicates that age, being male, being in the "No Data and Other" gender category, and being White are statistically significant predictors of survival. The base variables are being female and being Asian. Given that there are no overdose events for the American Indian or Native Alaskan individuals, their data was merged into the "No Data and Other" race category so as to not skew the results. \\
+
+The results show that, \textbf{holding all other things constant}: a one year increase in age is associated with an increase in hazard by a factor of 1.028 or 2.8\%; compared to being female, being male increases hazard by a factor of 1.87 or 87\% and being an individual with no reported gender or other increases hazard by a factor of 7.9 or 690\%; and compared to being Asian, being White increases hazard by a factor of 8.2 or 720\%. These findings are aligned with our findings using the Kaplan Meier estimation. \\
+
+We also ran a regularized Cox Proportional Hazard model and used cross-validation to determine the best (minimum) lambda value. Please refer to table \ref{tab:reg_cox_proportional} in the appendix for the resulting coefficients and associated change in hazard (\%). These findings are also consistent with the Kaplan Meier survival probabilities. 
 
 \begin{figure}[htp]
 \centering
@@ -224,6 +228,7 @@ This paper applies the analytical pipeline on Allegheny County DHS demographic, 
 \newpage
 \appendix
 \section*{Appendix}
+Code is available at https://github.com/nikitascmu/S19-aamlp-project-group1. 
 
 \begin{figure}[h!]
 \begin{center}
@@ -268,7 +273,7 @@ This paper applies the analytical pipeline on Allegheny County DHS demographic, 
      race\_American Indian/Alaskan Native & -1.102 & 0.332 & -66.8\\
      \hline
     \end{tabular}}
-    \label{fig:reg_cox_proportional}
+    \label{tab:reg_cox_proportional}
   \end{center}
 \end{table}
 
